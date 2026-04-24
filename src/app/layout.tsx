@@ -46,6 +46,19 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            var oldPushState = history.pushState;
+            history.pushState = function(state, title, url) {
+                if (url === "/" || url === "https://www.rayslifelab.com/") {
+                    console.error("拦截到非法回跳首页！堆栈信息：", new Error().stack);
+                   // alert("抓到你了！看控制台堆栈。"); 
+                   // return; // 如果你想强制阻止它跳走，可以取消注释这一行
+                }
+                return oldPushState.apply(history, arguments);
+            };
+          })();
+        ` }} />
         <Suspense>
           <RefineKbarProvider>
             <AntdRegistry>
