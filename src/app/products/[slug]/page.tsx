@@ -6,13 +6,13 @@ import Link from "next/link";
 function getYouTubeEmbedUrl(url: string) {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
+  const match = url?.match(regExp);
   return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
 }
 
-// 核心修复 1：将 params 的类型声明为 Promise
+// 核心修复：将 params 的类型声明为 Promise，兼容 Next.js 15
 export default async function ProductLandingPage(props: { params: Promise<{ slug: string }> }) {
-  // 核心修复 2：使用 await 等待 params 解析
+  // 等待 params 解析
   const params = await props.params;
   const slug = params.slug;
 
@@ -28,7 +28,7 @@ export default async function ProductLandingPage(props: { params: Promise<{ slug
     .single();
 
   if (!product) {
-    notFound(); // 找不到则显示 404
+    notFound(); 
   }
 
   const embedUrl = getYouTubeEmbedUrl(product.youtube_url);
@@ -56,7 +56,6 @@ export default async function ProductLandingPage(props: { params: Promise<{ slug
           {embedUrl ? (
              <iframe width="100%" height="100%" src={embedUrl} title="Product Demo" frameBorder="0" allowFullScreen></iframe>
           ) : (
-             {/* 修复 3：添加了 alt 属性，消除 img 警告 */}
              <img src={product.cover_image || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80'} alt={product.name || "产品封面"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           )}
         </div>
