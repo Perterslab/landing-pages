@@ -11,14 +11,34 @@ const FormGroup = ({ label, children, desc }: { label: string, children: React.R
   </div>
 );
 
+// 新增：高度复用的版块设置卡片组件
+const SectionConfigCard = ({ titleLabel, prefix, settings, setSettings }: any) => {
+  const inputStyle = { width: "100%", padding: "10px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "6px", color: "white", outline: "none" };
+  return (
+    <div style={{ background: "#0f172a", padding: "20px", borderRadius: "8px", border: "1px dashed #334155", marginBottom: "20px" }}>
+      <h4 style={{ margin: "0 0 15px 0", color: "#3b82f6" }}>{titleLabel}</h4>
+      <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 100px", gap: "15px", alignItems: "center" }}>
+        <div>
+          <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block", marginBottom: "5px" }}>图标(可留空)</label>
+          <input style={inputStyle} value={settings[`${prefix}_icon`] || ""} onChange={e => setSettings({...settings, [`${prefix}_icon`]: e.target.value})} placeholder="如: 🛠️" />
+        </div>
+        <div>
+          <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block", marginBottom: "5px" }}>展示标题</label>
+          <input style={inputStyle} value={settings[`${prefix}_title`] || ""} onChange={e => setSettings({...settings, [`${prefix}_title`]: e.target.value})} />
+        </div>
+        <div>
+          <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block", marginBottom: "5px" }}>字体颜色</label>
+          <input type="color" value={settings[`${prefix}_color`] || "#ffffff"} onChange={e => setSettings({...settings, [`${prefix}_color`]: e.target.value})} style={{ width: "100%", height: "38px", cursor: "pointer", background: "transparent", border: "none", padding: 0 }} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [settings, setSettings] = useState({
-    site_title: "", site_subtitle: "", primary_color: "", heading_color: "#ffffff", contact_email: "",
-    logo_url: "", hashnode_host: "xuepilot.hashnode.dev", 
-    hashnode_title: "📝 AI Education Lab", layout_mode: "classic"
-  });
+  const [settings, setSettings] = useState<any>({});
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -53,7 +73,15 @@ export default function SettingsPage() {
       <div style={{ background: "#1e293b", padding: "40px", borderRadius: "16px", border: "1px solid #334155" }}>
         
         <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px" }}>核心参数</h3>
-        <FormGroup label="网站主标题"><input style={inputStyle} value={settings.site_title || ""} onChange={e => setSettings({...settings, site_title: e.target.value})} /></FormGroup>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+          <FormGroup label="网站主标题"><input style={inputStyle} value={settings.site_title || ""} onChange={e => setSettings({...settings, site_title: e.target.value})} /></FormGroup>
+          <FormGroup label="主标题颜色">
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "10px" }}>
+              <input type="color" value={settings.heading_color || "#ffffff"} onChange={e => setSettings({...settings, heading_color: e.target.value})} style={colorBlockStyle} />
+              <span style={{ color: "#94a3b8" }}>{settings.heading_color || "#ffffff"}</span>
+            </div>
+          </FormGroup>
+        </div>
         
         <FormGroup label="Logo 图片">
           <div style={{ display: "flex", gap: "15px", alignItems: "center", background: "#0f172a", padding: "15px", borderRadius: "8px", border: "1px dashed #334155" }}>
@@ -63,37 +91,21 @@ export default function SettingsPage() {
           </div>
         </FormGroup>
         
-        <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>前台展示规则</h3>
+        <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>各版块视觉控制</h3>
+        <SectionConfigCard titleLabel="第一栏: 产品与项目" prefix="products" settings={settings} setSettings={setSettings} />
+        <SectionConfigCard titleLabel="第二栏: 开发手记" prefix="devnotes" settings={settings} setSettings={setSettings} />
+        <SectionConfigCard titleLabel="第三栏: 外部博客" prefix="hashnode" settings={settings} setSettings={setSettings} />
+
+        <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>高级与数据源</h3>
         <FormGroup label="首页排版模式">
           <select style={selectStyle} value={settings.layout_mode || "classic"} onChange={e => setSettings({...settings, layout_mode: e.target.value})}>
-            <option value="classic">Classic 经典网格 (推荐)</option>
+            <option value="classic">Classic 经典网格</option>
             <option value="minimal">Minimal 极简列表</option>
           </select>
         </FormGroup>
+        <FormGroup label="Hashnode 数据源"><input style={inputStyle} value={settings.hashnode_host || ""} onChange={e => setSettings({...settings, hashnode_host: e.target.value})} /></FormGroup>
+        <FormGroup label="全局主题色(按钮/链接)"><input type="color" value={settings.primary_color || "#3b82f6"} onChange={e => setSettings({...settings, primary_color: e.target.value})} style={colorBlockStyle} /></FormGroup>
         
-        <div style={{ background: "#0f172a", padding: "20px", borderRadius: "8px", border: "1px solid #334155", marginBottom: "24px" }}>
-          <FormGroup label="Hashnode 版块名称"><input style={inputStyle} value={settings.hashnode_title || ""} onChange={e => setSettings({...settings, hashnode_title: e.target.value})} /></FormGroup>
-          <FormGroup label="Hashnode 数据源"><input style={inputStyle} value={settings.hashnode_host || ""} onChange={e => setSettings({...settings, hashnode_host: e.target.value})} /></FormGroup>
-        </div>
-
-        <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>色彩与联络</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-          <FormGroup label="主题强调色 (主色)">
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-              <input type="color" value={settings.primary_color || "#3b82f6"} onChange={e => setSettings({...settings, primary_color: e.target.value})} style={colorBlockStyle} />
-              <span style={{ color: "#94a3b8" }}>{settings.primary_color || "#3b82f6"}</span>
-            </div>
-          </FormGroup>
-          <FormGroup label="各级标题颜色">
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-              <input type="color" value={settings.heading_color || "#ffffff"} onChange={e => setSettings({...settings, heading_color: e.target.value})} style={colorBlockStyle} />
-              <span style={{ color: "#94a3b8" }}>{settings.heading_color || "#ffffff"}</span>
-            </div>
-          </FormGroup>
-        </div>
-        
-        <FormGroup label="官方联系邮箱"><input type="email" style={inputStyle} value={settings.contact_email || ""} onChange={e => setSettings({...settings, contact_email: e.target.value})} /></FormGroup>
-
         <button onClick={handleSave} disabled={loading} style={{ width: "100%", padding: "16px", marginTop: "30px", backgroundColor: settings.primary_color || "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
           {loading ? "同步中..." : "保存全部设置"}
         </button>
