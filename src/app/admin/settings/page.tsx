@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { supabaseBrowserClient } from "@utils/supabase/client";
+import ImageUpload from "@/components/ImageUpload";
 
 const FormGroup = ({ label, children, desc }: { label: string, children: React.ReactNode, desc?: string }) => (
   <div style={{ marginBottom: "24px" }}>
@@ -51,10 +52,22 @@ export default function SettingsPage() {
         
         <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px" }}>核心参数</h3>
         <FormGroup label="网站主标题"><input style={inputStyle} value={settings.site_title} onChange={e => setSettings({...settings, site_title: e.target.value})} /></FormGroup>
-        <FormGroup label="Logo 图片 (URL)" desc="暂支持填入网络图片链接，后续开启物理上传"><input style={inputStyle} value={settings.logo_url} onChange={e => setSettings({...settings, logo_url: e.target.value})} placeholder="https://..." /></FormGroup>
+        
+        <FormGroup label="Logo 图片" desc="上传后将直接替换左上角的品牌标识">
+          <div style={{ display: "flex", gap: "15px", alignItems: "center", background: "#0f172a", padding: "15px", borderRadius: "8px", border: "1px dashed #334155" }}>
+            {settings.logo_url ? (
+              <img src={settings.logo_url} alt="Logo" style={{ height: "40px", width: "auto", borderRadius: "4px" }} />
+            ) : (
+              <div style={{ color: "#64748b", fontStyle: "italic", fontSize: "0.9rem" }}>当前无 Logo</div>
+            )}
+            <div style={{ flex: 1 }}></div>
+            {/* 对接物理上传 */}
+            <ImageUpload onUploadSuccess={(url) => setSettings({...settings, logo_url: url})} label="更换 Logo" />
+          </div>
+        </FormGroup>
         
         <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>前台展示规则</h3>
-        <FormGroup label="首页排版模式" desc="Classic(经典三栏式) / Minimal(极简列表式)">
+        <FormGroup label="首页排版模式">
           <select style={selectStyle} value={settings.layout_mode} onChange={e => setSettings({...settings, layout_mode: e.target.value})}>
             <option value="classic">Classic 经典网格 (推荐)</option>
             <option value="minimal">Minimal 极简列表</option>
