@@ -88,25 +88,21 @@ export const authProviderClient: AuthProvider = {
     };
   },
   check: async () => {
-      const { data } = await supabaseBrowserClient.auth.getSession();
-      const { session } = data;
+  const { data } = await supabaseBrowserClient.auth.getSession();
+  const { session } = data;
 
-      if (!session) {
-        return {
-          authenticated: false,
-          error: {
-            message: "请先登录",
-            name: "Unauthorized",
-          },
-          // 【关键修复】：明确告诉 Refine，没登录时去 /login，而不是默认的 /
-          redirectTo: "/login", 
-        };
-      }
+  if (!session) {
+    return {
+      authenticated: false,
+      redirectTo: "/login",
+      // ⚠️ 核心修复：绝对不要在这里返回 error，让他安安静静地待在 login 页
+    };
+  }
 
-      return {
-        authenticated: true,
-      };
-    },
+  return {
+    authenticated: true,
+  };
+},
   getPermissions: async () => {
     // @ts-ignore
     const user = await supabaseBrowserClient.auth.getUser();
@@ -127,11 +123,14 @@ export const authProviderClient: AuthProvider = {
     return null;
   },
   onError: async (error) => {
-    if (error?.code === "PGRST301" || error?.code === 401) {
-      return {
-        logout: true,
-      };
-    }
-    return { error };
-  },
+  console.error("Auth Error:", error);
+  // 如果遇到 401 未授权，或者是别的严重错误，统一导向登录页，绝不去首页
+  if (error?.status === 401 || error?.name === "AuthApiError") {
+    return {
+      logout: true,
+      redirectTo: "/login", 
+    };
+  }
+  return { error };
+},
 };
