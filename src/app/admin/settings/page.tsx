@@ -1,67 +1,87 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { supabaseBrowserClient } from "@utils/supabase/client";
+
+const FormGroup = ({ label, children, desc }: { label: string, children: React.ReactNode, desc?: string }) => (
+  <div style={{ marginBottom: "24px" }}>
+    <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#e2e8f0" }}>{label}</label>
+    {desc && <p style={{ color: "#64748b", fontSize: "0.85rem", marginTop: "-4px", marginBottom: "8px" }}>{desc}</p>}
+    {children}
+  </div>
+);
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [settings, setSettings] = useState({
+    site_title: "",
+    site_subtitle: "",
+    primary_color: "",
+    contact_email: ""
+  });
 
-  const handleSave = () => {
+  // 读取数据库里 ID 为 1 的唯一配置
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabaseBrowserClient.from("site_settings").select("*").eq("id", 1).single();
+      if (data) setSettings(data);
+      setFetching(false);
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
     setLoading(true);
-    // 这里未来可以接入数据库，目前仅作 UI 搭建演示
-    setTimeout(() => { alert("设置已保存！(当前为演示模式)"); setLoading(false); }, 800);
+    const { error } = await supabaseBrowserClient.from("site_settings").update({
+      ...settings,
+      updated_at: new Date().toISOString()
+    }).eq("id", 1);
+    
+    if (error) alert("保存失败: " + error.message);
+    else alert("✅ 设置已成功更新！");
+    setLoading(false);
   };
 
-  const FormGroup = ({ label, desc, children }: { label: string, desc?: string, children: React.ReactNode }) => (
-    <div style={{ marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: "24px", borderBottom: "1px solid #334155" }}>
-      <div style={{ width: "35%" }}>
-        <h4 style={{ margin: "0 0 8px 0", color: "#e2e8f0", fontSize: "1rem" }}>{label}</h4>
-        {desc && <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem", lineHeight: "1.5" }}>{desc}</p>}
-      </div>
-      <div style={{ width: "60%" }}>{children}</div>
-    </div>
-  );
+  const inputStyle = { width: "100%", padding: "12px", backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "8px", color: "white", outline: "none", fontSize: "1rem" };
 
-  const inputStyle = { width: "100%", padding: "12px", backgroundColor: "#0f172a", border: "1px solid #475569", borderRadius: "8px", color: "white", outline: "none" };
+  if (fetching) return <div style={{ padding: "40px", color: "#94a3b8" }}>读取配置中...</div>;
 
   return (
-    <div style={{ padding: "50px", color: "#f8fafc", maxWidth: "1000px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px" }}>
-        <div>
-          <h1 style={{ fontSize: "2rem", margin: 0 }}>全局参数设置</h1>
-          <p style={{ color: "#94a3b8", marginTop: "10px" }}>管理站点名称、SEO信息与基础展示风格</p>
-        </div>
-        <button onClick={handleSave} disabled={loading} style={{ padding: "12px 30px", backgroundColor: "#3b82f6", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
-          {loading ? "保存中..." : "保存设置"}
-        </button>
-      </div>
+    <div style={{ padding: "40px", color: "#f8fafc", maxWidth: "800px" }}>
+      <h1 style={{ fontSize: "2rem", marginBottom: "10px" }}>全局外观与参数设置</h1>
+      <p style={{ color: "#94a3b8", marginBottom: "40px" }}>管理你独立站的品牌形象、颜色风格和核心信息。</p>
 
       <div style={{ background: "#1e293b", padding: "40px", borderRadius: "16px", border: "1px solid #334155" }}>
-        <h3 style={{ borderBottom: "2px solid #3b82f6", paddingBottom: "10px", marginBottom: "30px", display: "inline-block" }}>站点基础信息</h3>
+        <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px" }}>品牌标识</h3>
         
-        <FormGroup label="独立站名称" desc="显示在浏览器标签页顶部和左上角Logo位置。">
-          <input defaultValue="Ray's Lab" style={inputStyle} />
+        <FormGroup label="网站主标题 (Site Title)" desc="显示在左上角导航栏和浏览器标签页上的文字">
+          <input style={inputStyle} value={settings.site_title} onChange={e => setSettings({...settings, site_title: e.target.value})} placeholder="例如: RAY'S LAB" />
         </FormGroup>
 
-        <FormGroup label="一句话 Slogan" desc="显示在首页大标题下方，用于传达你的核心价值观。">
-          <input defaultValue="专注构建下一代 AI 工作流、高阶浏览器插件与全球化的全栈独立工具。" style={inputStyle} />
+        <FormGroup label="网站副标题 / Slogan" desc="用于 SEO 优化或首页的欢迎语介绍">
+          <input style={inputStyle} value={settings.site_subtitle} onChange={e => setSettings({...settings, site_subtitle: e.target.value})} placeholder="例如: Digital Asset Management" />
         </FormGroup>
 
-        <FormGroup label="SEO 描述 (Description)" desc="用于谷歌等搜索引擎收录时展示的摘要文本。">
-          <textarea defaultValue="个人数字产品矩阵管理后台，专注于技术创新与数字效率边界的探索。" style={{ ...inputStyle, height: "100px" }} />
-        </FormGroup>
+        <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>视觉与联系方式</h3>
 
-        <h3 style={{ borderBottom: "2px solid #3b82f6", paddingBottom: "10px", margin: "40px 0 30px", display: "inline-block" }}>外观与社交网络</h3>
-        
-        <FormGroup label="主题色 (Primary Color)" desc="按钮和关键链接的颜色。">
-          <div style={{ display: "flex", gap: "15px" }}>
-            <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "#3b82f6", border: "2px solid white", cursor: "pointer" }}></div>
-            <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "#10b981", cursor: "pointer" }}></div>
-            <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "#8b5cf6", cursor: "pointer" }}></div>
+        <FormGroup label="主题强调色 (Primary Color)" desc="按钮、高亮文字和特定图标的主色调 (Hex 格式)">
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <input type="color" value={settings.primary_color} onChange={e => setSettings({...settings, primary_color: e.target.value})} style={{ width: "50px", height: "50px", border: "none", borderRadius: "8px", cursor: "pointer", padding: 0, background: "transparent" }} />
+            <input style={{ ...inputStyle, width: "150px" }} value={settings.primary_color} onChange={e => setSettings({...settings, primary_color: e.target.value})} />
           </div>
         </FormGroup>
 
-        <FormGroup label="Twitter / X 链接" desc="在页面底部的社交图标跳转地址。">
-          <input placeholder="https://twitter.com/..." style={inputStyle} />
+        <FormGroup label="官方联系邮箱">
+          <input type="email" style={inputStyle} value={settings.contact_email} onChange={e => setSettings({...settings, contact_email: e.target.value})} />
         </FormGroup>
+
+        <button 
+          onClick={handleSave} 
+          disabled={loading} 
+          style={{ width: "100%", padding: "16px", marginTop: "30px", backgroundColor: settings.primary_color || "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", fontSize: "1.1rem" }}
+        >
+          {loading ? "正在同步到服务器..." : "保存全部设置"}
+        </button>
       </div>
     </div>
   );
