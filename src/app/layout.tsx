@@ -58,17 +58,27 @@ export default async function RootLayout({
                     dataProvider={dataProvider}
                     notificationProvider={useNotificationProvider}
                     authProvider={authProviderClient}
-                    resources={[
-                      {
-                        name: "products",
-                        meta: {
-                          label: "产品管理",
-                        },
-                        list: "/admin/products",
-                        create: "/admin/products/create",
-                        edit: "/admin/products/edit/:id",
-                      }
-                    ]}
+// 在 src/app/layout.tsx 中找到 resources 替换为以下内容：
+resources={[
+  {
+    name: "products",
+    meta: { label: "📦 产品与工具" },
+    list: "/admin/products",
+    create: "/admin/products/create",
+    edit: "/admin/products/edit/:id",
+  },
+  {
+    name: "articles",
+    meta: { label: "📝 资讯与新闻" },
+    list: "/admin/articles",
+    create: "/admin/articles/create",
+  },
+  {
+    name: "settings",
+    meta: { label: "⚙️ 首页与风格设置" },
+    list: "/admin/settings",
+  }
+]}
                     options={{
                       syncWithLocation: true,
                       warnWhenUnsavedChanges: true,
