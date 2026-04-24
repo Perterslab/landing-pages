@@ -15,7 +15,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [settings, setSettings] = useState({
-    site_title: "", site_subtitle: "", primary_color: "", contact_email: "",
+    site_title: "", site_subtitle: "", primary_color: "", heading_color: "#ffffff", contact_email: "",
     logo_url: "", hashnode_host: "xuepilot.hashnode.dev", 
     hashnode_title: "📝 AI Education Lab", layout_mode: "classic"
   });
@@ -42,6 +42,7 @@ export default function SettingsPage() {
 
   const inputStyle = { width: "100%", padding: "12px", backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "8px", color: "white", outline: "none", fontSize: "1rem" };
   const selectStyle = { ...inputStyle, cursor: "pointer", appearance: "auto" };
+  const colorBlockStyle = { width: "50px", height: "40px", cursor: "pointer", background: "transparent", border: "none", padding: 0 };
 
   if (fetching) return <div style={{ padding: "40px", color: "#94a3b8" }}>读取配置中...</div>;
 
@@ -54,13 +55,9 @@ export default function SettingsPage() {
         <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px" }}>核心参数</h3>
         <FormGroup label="网站主标题"><input style={inputStyle} value={settings.site_title || ""} onChange={e => setSettings({...settings, site_title: e.target.value})} /></FormGroup>
         
-        <FormGroup label="Logo 图片" desc="上传后将直接替换左上角的品牌标识">
+        <FormGroup label="Logo 图片">
           <div style={{ display: "flex", gap: "15px", alignItems: "center", background: "#0f172a", padding: "15px", borderRadius: "8px", border: "1px dashed #334155" }}>
-            {settings.logo_url ? (
-              <img src={settings.logo_url} alt="Logo" style={{ height: "40px", width: "auto", borderRadius: "4px" }} />
-            ) : (
-              <div style={{ color: "#64748b", fontStyle: "italic", fontSize: "0.9rem" }}>当前无 Logo</div>
-            )}
+            {settings.logo_url ? <img src={settings.logo_url} alt="Logo" style={{ height: "40px", width: "auto", borderRadius: "4px" }} /> : <div style={{ color: "#64748b", fontStyle: "italic", fontSize: "0.9rem" }}>当前无 Logo</div>}
             <div style={{ flex: 1 }}></div>
             <ImageUpload onUploadSuccess={(url) => setSettings({...settings, logo_url: url})} label="更换 Logo" />
           </div>
@@ -75,16 +72,26 @@ export default function SettingsPage() {
         </FormGroup>
         
         <div style={{ background: "#0f172a", padding: "20px", borderRadius: "8px", border: "1px solid #334155", marginBottom: "24px" }}>
-          <FormGroup label="Hashnode 版块名称" desc="控制前台博客区域的大标题">
-            <input style={inputStyle} value={settings.hashnode_title || ""} onChange={e => setSettings({...settings, hashnode_title: e.target.value})} />
-          </FormGroup>
-          <FormGroup label="Hashnode 数据源" desc="你的 Hashnode 自定义域名或自带后缀域名">
-            <input style={inputStyle} value={settings.hashnode_host || ""} onChange={e => setSettings({...settings, hashnode_host: e.target.value})} />
-          </FormGroup>
+          <FormGroup label="Hashnode 版块名称"><input style={inputStyle} value={settings.hashnode_title || ""} onChange={e => setSettings({...settings, hashnode_title: e.target.value})} /></FormGroup>
+          <FormGroup label="Hashnode 数据源"><input style={inputStyle} value={settings.hashnode_host || ""} onChange={e => setSettings({...settings, hashnode_host: e.target.value})} /></FormGroup>
         </div>
 
-        <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>样式与联络</h3>
-        <FormGroup label="主题强调色"><input type="color" value={settings.primary_color || "#3b82f6"} onChange={e => setSettings({...settings, primary_color: e.target.value})} style={{ width: "50px", height: "40px", cursor: "pointer", background: "transparent", border: "none" }} /></FormGroup>
+        <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>色彩与联络</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+          <FormGroup label="主题强调色 (主色)">
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input type="color" value={settings.primary_color || "#3b82f6"} onChange={e => setSettings({...settings, primary_color: e.target.value})} style={colorBlockStyle} />
+              <span style={{ color: "#94a3b8" }}>{settings.primary_color || "#3b82f6"}</span>
+            </div>
+          </FormGroup>
+          <FormGroup label="各级标题颜色">
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input type="color" value={settings.heading_color || "#ffffff"} onChange={e => setSettings({...settings, heading_color: e.target.value})} style={colorBlockStyle} />
+              <span style={{ color: "#94a3b8" }}>{settings.heading_color || "#ffffff"}</span>
+            </div>
+          </FormGroup>
+        </div>
+        
         <FormGroup label="官方联系邮箱"><input type="email" style={inputStyle} value={settings.contact_email || ""} onChange={e => setSettings({...settings, contact_email: e.target.value})} /></FormGroup>
 
         <button onClick={handleSave} disabled={loading} style={{ width: "100%", padding: "16px", marginTop: "30px", backgroundColor: settings.primary_color || "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
