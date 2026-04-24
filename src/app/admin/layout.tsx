@@ -1,5 +1,5 @@
 "use client";
-export const dynamic = "force-dynamic"; // 核心修复：强制动态渲染
+export const dynamic = "force-dynamic";
 
 import { Authenticated } from "@refinedev/core";
 import React, { useState } from "react";
@@ -38,11 +38,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <Authenticated key="admin-auth" redirectOnFail="/login">
       <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#0f172a" }}>
+        
         <aside style={{ width: "260px", backgroundColor: "#1e293b", borderRight: "1px solid #334155", display: "flex", flexDirection: "column", position: "fixed", height: "100vh", left: 0, top: 0, zIndex: 50, overflowY: "auto" }}>
-          <div style={{ padding: "30px 24px", borderBottom: "1px solid #334155" }}>
-            <h2 style={{ color: "#ffffff", fontSize: "1.5rem", margin: 0, fontWeight: "900" }}>Ray&apos;s Lab</h2>
-            <div style={{ color: "#10b981", fontSize: "0.85rem", marginTop: "5px", fontWeight: "bold" }}>● 系统运行中</div>
+          
+          {/* 新增：返回首页按钮 */}
+          <div style={{ padding: "20px" }}>
+             <Link href="/" style={{ display: "block", textAlign: "center", padding: "12px", background: "linear-gradient(45deg, #3b82f6, #8b5cf6)", color: "#fff", textDecoration: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "0.9rem", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)" }}>
+               ✨ 预览我的独立站 &rarr;
+             </Link>
           </div>
+
+          <div style={{ padding: "10px 24px 20px", borderBottom: "1px solid #334155" }}>
+            <h2 style={{ color: "#ffffff", fontSize: "1.3rem", margin: 0, fontWeight: "900" }}>Ray&apos;s Lab</h2>
+            <div style={{ color: "#10b981", fontSize: "0.8rem", marginTop: "5px", fontWeight: "bold" }}>● 系统运行中</div>
+          </div>
+          
           <nav style={{ flex: 1, padding: "20px 12px", display: "flex", flexDirection: "column", gap: "5px" }}>
             {menus.map(menu => (
               <div key={menu.id} style={{ marginBottom: "5px" }}>
@@ -50,6 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <span>{menu.icon} {menu.title}</span>
                   <span style={{ transform: openMenu === menu.id ? "rotate(180deg)" : "rotate(0deg)", transition: "0.3s", fontSize: "0.8rem" }}>▼</span>
                 </div>
+                
                 {openMenu === menu.id && (
                   <div style={{ display: "flex", flexDirection: "column", marginTop: "5px", marginLeft: "15px", borderLeft: "2px solid #334155", paddingLeft: "10px" }}>
                     {menu.items.map(item => {
@@ -65,11 +76,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             ))}
           </nav>
+
           <div style={{ padding: "20px", borderTop: "1px solid #334155" }}>
              <button onClick={handleLogout} style={{ width: "100%", padding: "12px", backgroundColor: "transparent", color: "#ef4444", border: "1px solid #ef4444", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>退出登录</button>
           </div>
         </aside>
-        <main style={{ marginLeft: "260px", flex: 1, width: "calc(100% - 260px)" }}>{children}</main>
+
+        <main style={{ marginLeft: "260px", flex: 1, width: "calc(100% - 240px)" }}>{children}</main>
       </div>
     </Authenticated>
   );

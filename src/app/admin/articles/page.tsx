@@ -30,7 +30,7 @@ export default function ArticlesList() {
       </div>
 
       {loading ? (<div style={{ color: "#94a3b8" }}>读取中...</div>) : articles.length === 0 ? (
-        <div style={{ padding: "40px", textAlign: "center", backgroundColor: "#1e293b", borderRadius: "12px", border: "1px dashed #475569", color: "#64748b" }}>还没有发布任何文章，点击右侧按钮开始撰写吧。</div>
+        <div style={{ padding: "40px", textAlign: "center", backgroundColor: "#1e293b", borderRadius: "12px", border: "1px dashed #475569", color: "#64748b" }}>还没有发布任何文章。</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
           {articles.map(a => (
@@ -40,8 +40,11 @@ export default function ArticlesList() {
                   <span style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: a.is_published ? "#10b981" : "#64748b" }}></span>
                   {a.title}
                 </h3>
-                <p style={{ color: "#94a3b8", margin: 0, fontSize: "0.95rem" }}>{new Date(a.created_at).toLocaleDateString()}</p>
+                <p style={{ color: "#64748b", margin: 0, fontSize: "0.85rem" }}>{new Date(a.created_at).toLocaleDateString()}</p>
               </div>
+              <button onClick={() => router.push(`/admin/articles/edit/${a.id}`)} style={{ padding: "8px 16px", backgroundColor: "#475569", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
+                编辑
+              </button>
             </div>
           ))}
         </div>
