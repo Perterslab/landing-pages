@@ -1,19 +1,16 @@
 "use client";
+export const dynamic = "force-dynamic"; // 核心修复
 
-import { AuthPage } from "@components/auth-page";
-import { supabaseBrowserClient } from "@utils/supabase/client";
-import { useEffect } from "react";
+import { AuthPage } from "@refinedev/antd";
 
-export default function LoginPage() {
-  useEffect(() => {
-    supabaseBrowserClient.auth.signOut();
-    localStorage.clear();
-  }, []);
-
+export default function Login() {
   return (
-    <AuthPage 
-      type="login" 
-      title={<h1 style={{ color: '#3b82f6', marginBottom: '20px' }}>Ray&apos;s Lab</h1>}
+    <AuthPage
+      type="login"
+      formProps={{
+        initialValues: { email: "", password: "" },
+      }}
+      rememberMe={false}
     />
   );
 }
