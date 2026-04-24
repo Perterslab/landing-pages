@@ -1,130 +1,82 @@
 "use client";
 
-import { Create, useForm } from "@refinedev/antd";
-import { Form, Input, Select, Switch, Card, Button, Space, Typography, Divider } from "antd";
-import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
-const { Title, Text } = Typography;
-const { TextArea } = Input;
+// 焊死连接（确保此处与你的 constants.ts 一致）
+const supabaseUrl = "https://jdnuikgtxooetvoyyyvw.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkbnVpa2d0eG9vZXR2b3l5eXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MTUzNDQsImV4cCI6MjA5MjQ5MTM0NH0.QcBdJ4IVSaQQJn1y7s8RSRiR0yqcdtfFp2F1IZSNE2E";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function ProductCreate() {
-  const { formProps, saveButtonProps } = useForm({});
-  
-  // 监听产品类型，实现表单的动态变形
-  const productType = Form.useWatch("product_type", formProps.form);
+export default function CreateProductPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    slug: "",
+    summary: "",
+    description: "",
+    youtube_url: "",
+    cover_image: "",
+    download_url: "",
+    is_published: false,
+    is_featured: false,
+    product_type: "tool"
+  });
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("products").insert([formData]);
+      if (error) throw error;
+      alert("🎉 成功点亮新产品！");
+      router.push("/admin/products");
+    } catch (err: any) {
+      alert("保存失败: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Create saveButtonProps={saveButtonProps} title={<Title level={3}>🚀 发布新数字资产</Title>}>
-      <Form 
-        {...formProps} 
-        layout="vertical"
-        initialValues={{
-          product_type: "standard",
-          is_published: false,
-          content: { features: [] } // 初始化 JSONB 结构
-        }}
-      >
-        <Card title="基础信息 (必填)" bordered={false} style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: "16px" }}>
-            <Form.Item
-              label="产品名称"
-              name="name"
-              rules={[{ required: true, message: "请输入产品名称" }]}
-              style={{ flex: 1 }}
-            >
-              <Input placeholder="例如：PriceWatch Asia" size="large" />
-            </Form.Item>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc" }}>
+      {/* --- 左侧：快捷控制面板 --- */}
+      <aside style={{ width: "300px", borderRight: "1px solid #1e293b", padding: "40px 24px", position: "fixed", height: "100vh", display: "flex", flexDirection: "column", gap: "30px" }}>
+        <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#3b82f6" }}>控制中心</h2>
+        
+        <div style={{ backgroundColor: "#1e293b", padding: "20px", borderRadius: "12px", border: "1px solid #334155" }}>
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "15px", cursor: "pointer" }}>
+            <span>立即发布上线</span>
+            <input type="checkbox" checked={formData.is_published} onChange={e => setFormData({...formData, is_published: e.target.checked})} style={{ width: "20px", height: "20px" }} />
+          </label>
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+            <span>设为首页旗舰推荐</span>
+            <input type="checkbox" checked={formData.is_featured} onChange={e => setFormData({...formData, is_featured: e.target.checked})} style={{ width: "20px", height: "20px" }} />
+          </label>
+        </div>
 
-            <Form.Item
-              label="URL 访问路径 (Slug)"
-              name="slug"
-              rules={[{ required: true, message: "请输入唯一的路径" }]}
-              style={{ flex: 1 }}
-            >
-              <Input placeholder="例如：pricewatch-asia (建议纯小写英文加横杠)" size="large" />
-            </Form.Item>
-          </div>
+        <div style={{ marginTop: "auto" }}>
+          <button 
+            onClick={handleSave} 
+            disabled={loading}
+            style={{ width: "100%", padding: "14px", backgroundColor: "#3b82f6", color: "white", borderRadius: "8px", fontWeight: "bold", border: "none", cursor: loading ? "not-allowed" : "pointer", boxShadow: "0 4px 14px 0 rgba(59, 130, 246, 0.3)" }}
+          >
+            {loading ? "正在同步云端..." : "确认并保存发布"}
+          </button>
+        </div>
+      </aside>
 
-          <Form.Item label="一句话简介" name="summary">
-            <Input placeholder="用于列表页和 SEO 描述..." />
-          </Form.Item>
-        </Card>
+      {/* --- 右侧：主编辑区 --- */}
+      <main style={{ marginLeft: "300px", flex: 1, padding: "40px 60px" }}>
+        <div style={{ maxWidth: "800px" }}>
+          <header style={{ marginBottom: "40px" }}>
+            <h1 style={{ fontSize: "2rem", fontWeight: "900" }}>创建新产品</h1>
+            <p style={{ color: "#94a3b8" }}>配置 Ray&apos;s Lab 的下一个数字资产</p>
+          </header>
 
-        <Card title="展示与状态控制" bordered={false} style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: "32px", alignItems: "center" }}>
-            <Form.Item 
-              label="落地页展示类型" 
-              name="product_type" 
-              style={{ flex: 1, marginBottom: 0 }}
-            >
-              <Select size="large">
-                <Select.Option value="standard">📄 标准型 (基础图文 + 简单下载)</Select.Option>
-                <Select.Option value="project">🧱 项目型 (启用高级动态积木模块)</Select.Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item 
-              label="是否立即发布上线？" 
-              name="is_published" 
-              valuePropName="checked"
-              style={{ marginBottom: 0 }}
-            >
-              <Switch checkedChildren="已发布" unCheckedChildren="草稿" />
-            </Form.Item>
-          </div>
-        </Card>
-
-        {/* 条件渲染：只有标准型才显示简单的下载链接和描述 */}
-        {productType === "standard" && (
-          <Card title="标准型内容" bordered={false} style={{ marginBottom: 16 }}>
-            <Form.Item label="下载链接或访问地址" name="download_url">
-              <Input placeholder="https://..." size="large" />
-            </Form.Item>
-            <Form.Item label="详细描述" name="description">
-              <TextArea rows={6} placeholder="输入软件详细介绍（支持普通文本或基础 HTML）..." />
-            </Form.Item>
-          </Card>
-        )}
-
-        {/* 条件渲染：积木系统大显身手的地方 (数据存入 content 字段) */}
-        {productType === "project" && (
-          <Card title="🧱 动态积木配置 (Project 专属)" bordered={false} style={{ marginBottom: 16 }}>
-            <Text type="secondary">在这里添加的内容将以 JSON 格式存储，并在前台被渲染成精美的独立站模块。</Text>
-            <Divider />
-            
-            <Form.List name={["content", "features"]}>
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <Space key={key} style={{ display: 'flex', marginBottom: 16 }} align="baseline">
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'title']}
-                        rules={[{ required: true, message: '缺少模块标题' }]}
-                      >
-                        <Input placeholder="特性标题 (如: 极速响应)" />
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'description']}
-                        rules={[{ required: true, message: '缺少模块描述' }]}
-                      >
-                        <Input.TextArea placeholder="特性详细描述..." rows={1} style={{ width: '400px' }} />
-                      </Form.Item>
-                      <MinusCircleOutlined onClick={() => remove(name)} style={{ color: 'red' }} />
-                    </Space>
-                  ))}
-                  <Form.Item>
-                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                      新增特性区块 (Feature Block)
-                    </Button>
-                  </Form.Item>
-                </>
-              )}
-            </Form.List>
-          </Card>
-        )}
-      </Form>
-    </Create>
-  );
-}
+          {/* 模块 A：基础身份信息 */}
+          <section style={{ backgroundColor: "#1e293b", padding: "32px", borderRadius: "16px", border: "1px solid #334155", marginBottom: "30px" }}>
+            <h3 style={{ marginBottom: "20px", fontSize: "1.1rem", borderLeft: "4px solid #3b82f6", paddingLeft: "12px" }}>基础信息</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+              <div>
