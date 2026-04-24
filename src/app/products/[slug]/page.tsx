@@ -1,88 +1,82 @@
-import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { notFound } from "next/navigation";
+import Link from "next/link";
 
-// --- 1. 内部组件定义区 (直接内置，不再报未定义错误) ---
+// 解析 YouTube 链接
+function getYouTubeEmbedUrl(url: string) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
+}
 
-const HeroSection = ({ name, summary }: { name: string; summary: string }) => (
-  <section style={{ padding: "80px 20px", textAlign: "center", backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-    <h1 style={{ fontSize: "3rem", fontWeight: "bold", color: "#0f172a", marginBottom: "1rem" }}>{name}</h1>
-    <p style={{ fontSize: "1.25rem", color: "#64748b", maxWidth: "600px", margin: "0 auto" }}>{summary}</p>
-  </section>
-);
-
-const BlockEngine = ({ content }: { content: any }) => (
-  <div style={{ padding: "60px 20px", maxWidth: "800px", margin: "0 auto" }}>
-    <h2 style={{ fontSize: "2rem", marginBottom: "30px", borderBottom: "2px solid #3b82f6", display: "inline-block" }}>
-      🧱 高级功能特性
-    </h2>
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {content?.features?.map((feature: any, index: number) => (
-        <div key={index} style={{ padding: "24px", backgroundColor: "white", borderRadius: "12px", boxShadow: "0 4px 6px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" }}>
-          <h3 style={{ fontSize: "1.25rem", color: "#1e293b", marginBottom: "10px" }}>✨ {feature.title}</h3>
-          <p style={{ color: "#475569", lineHeight: "1.6" }}>{feature.description}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const StandardContent = ({ description, url }: { description: string; url: string }) => (
-  <div style={{ padding: "60px 20px", maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
-    <div style={{ fontSize: "1.1rem", color: "#334155", lineHeight: "1.8", marginBottom: "40px", textAlign: "left", whiteSpace: "pre-wrap" }}>
-      {description}
-    </div>
-    {url && (
-      <a 
-        href={url} 
-        target="_blank" 
-        rel="noreferrer"
-        style={{ display: "inline-block", padding: "16px 40px", backgroundColor: "#0f172a", color: "white", borderRadius: "8px", textDecoration: "none", fontSize: "1.1rem", fontWeight: "500", transition: "all 0.2s" }}
-      >
-        立即访问 / 下载
-      </a>
-    )}
-  </div>
-);
-
-// --- 2. Next.js 页面主逻辑 (服务端渲染 SSR) ---
-
-export default async function ProductLandingPage({ params }: { params: Promise<{ slug: string }> }) {
-  // 解析 URL 参数
-  const { slug } = await params;
-
-  // 初始化 Supabase 客户端
+export default async function ProductLandingPage({ params }: { params: { slug: string } }) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 获取数据库信息
-  const { data: product, error } = await supabase
+  // 根据网址的 slug 查找特定产品
+  const { data: product } = await supabase
     .from("products")
     .select("*")
-    .eq("slug", slug)
-    .eq("is_published", true)
+    .eq("slug", params.slug)
     .single();
 
-  // 如果找不到数据，抛出 404
-  if (error || !product) {
-    notFound();
+  if (!product) {
+    notFound(); // 找不到则显示 404
   }
 
-  return (
-    <main style={{ minHeight: "100vh", backgroundColor: "#fcfcfc", fontFamily: "sans-serif" }}>
-      {/* 渲染头部 */}
-      <HeroSection name={product.name} summary={product.summary} />
+  const embedUrl = getYouTubeEmbedUrl(product.youtube_url);
 
-      {/* 动态分发引擎 */}
-      {product.product_type === "project" ? (
-        <BlockEngine content={product.content} />
-      ) : (
-        <StandardContent description={product.description} url={product.download_url} />
-      )}
+  return (
+    <main style={{ minHeight: "100vh", backgroundColor: "#ffffff", color: "#0f172a", fontFamily: "system-ui, sans-serif" }}>
       
-      {/* 原生 HTML 小写 footer，彻底解决大写 Footer 找不到的问题 */}
-      <footer style={{ textAlign: "center", padding: "40px", color: "#94a3b8", marginTop: "40px", borderTop: "1px solid #e2e8f0" }}>
-       © {new Date().getFullYear()} Ray&apos;s Lab. All rights reserved.
+      {/* 顶部返回导航 (如果是独立域名指向，可以通过中间件隐藏这个栏) */}
+      <nav style={{ padding: "20px 5%", borderBottom: "1px solid #f1f5f9" }}>
+        <Link href="/" style={{ color: "#64748b", textDecoration: "none", fontSize: "0.95rem" }}>
+          &larr; 返回 Ray&apos;s Lab
+        </Link>
+      </nav>
+
+      {/* 首屏视觉冲击区 */}
+      <header style={{ padding: "80px 20px", textAlign: "center", backgroundColor: "#f8fafc" }}>
+        <h1 style={{ fontSize: "3.5rem", fontWeight: "900", color: "#0f172a", marginBottom: "20px" }}>
+          {product.name}
+        </h1>
+        <p style={{ fontSize: "1.25rem", color: "#475569", maxWidth: "700px", margin: "0 auto", lineHeight: "1.6" }}>
+          {product.summary}
+        </p>
+      </header>
+
+      {/* 视频或封面演示区 */}
+      <section style={{ maxWidth: "900px", margin: "-40px auto 60px", padding: "0 20px" }}>
+        <div style={{ borderRadius: "16px", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", backgroundColor: "#000", aspectRatio: "16/9" }}>
+          {embedUrl ? (
+             <iframe width="100%" height="100%" src={embedUrl} title="Product Demo" frameBorder="0" allowFullScreen></iframe>
+          ) : (
+             <img src={product.cover_image || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80'} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          )}
+        </div>
+      </section>
+
+      {/* 核心文案与详情区 */}
+      <section style={{ maxWidth: "800px", margin: "0 auto", padding: "0 20px 80px" }}>
+        <div style={{ padding: "40px", backgroundColor: "#f8fafc", borderRadius: "16px", border: "1px solid #e2e8f0", whiteSpace: "pre-wrap", lineHeight: "1.8", fontSize: "1.1rem", color: "#334155" }}>
+          {product.description || "详细功能白皮书正在撰写中..."}
+        </div>
+        
+        {/* 行动号召按钮 (CTA) */}
+        {product.download_url && (
+          <div style={{ textAlign: "center", marginTop: "50px" }}>
+            <a href={product.download_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", backgroundColor: "#0f172a", color: "#ffffff", padding: "18px 40px", borderRadius: "12px", textDecoration: "none", fontSize: "1.2rem", fontWeight: "bold", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}>
+              获取 {product.name} &rarr;
+            </a>
+          </div>
+        )}
+      </section>
+
+      <footer style={{ textAlign: "center", padding: "40px", color: "#94a3b8", borderTop: "1px solid #f1f5f9" }}>
+        © {new Date().getFullYear()} {product.name} by Ray&apos;s Lab.
       </footer>
     </main>
   );
