@@ -2,6 +2,15 @@ import { DevtoolsProvider } from "../providers/devtools";
 import { ColorModeContextProvider } from "../contexts/color-mode";
 import { authProviderClient } from "../providers/auth-provider/auth-provider.client";
 import { dataProvider } from "../providers/data-provider";
+import { Authenticated } from "@refinedev/core";
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Authenticated key="admin-auth" fallback={null}>
+      {children}
+    </Authenticated>
+  );
+}
 
 import { useNotificationProvider } from "@refinedev/antd";
 import { Refine } from "@refinedev/core";
