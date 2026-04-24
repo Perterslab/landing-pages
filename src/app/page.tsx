@@ -36,9 +36,12 @@ export default async function HomePage() {
 
       <nav style={{ display: "flex", justifyContent: "space-between", padding: "20px 5%", borderBottom: "1px solid #1e293b", alignItems: "center" }}>
         <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>RAY&apos;S LAB</div>
-        <a href="/login" style={{ color: "#3b82f6", textDecoration: "none", fontWeight: "bold", border: "1px solid #3b82f6", padding: "8px 16px", borderRadius: "6px" }}>
+        <button 
+          onClick={() => { window.location.assign('/login'); }} 
+          style={{ background: "transparent", color: "#3b82f6", fontWeight: "bold", border: "1px solid rgba(59, 130, 246, 0.5)", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontSize: "1rem" }}
+        >
           Admin Portal &rarr;
-        </a>
+        </button>
       </nav>
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "60px 20px" }}>
