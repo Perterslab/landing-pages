@@ -1,12 +1,6 @@
-"use client";
-
-import { Authenticated } from "@refinedev/core";
 import React from "react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <Authenticated key="admin-layout" redirectOnFail="/login">
-      {children}
-    </Authenticated>
-  );
+  // 拆除前端保安，直接渲染。安保全交给 middleware.ts 这道铁门。
+  return <>{children}</>;
 }
