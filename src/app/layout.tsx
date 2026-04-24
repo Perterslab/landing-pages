@@ -2,16 +2,6 @@ import { DevtoolsProvider } from "../providers/devtools";
 import { ColorModeContextProvider } from "../contexts/color-mode";
 import { authProviderClient } from "../providers/auth-provider/auth-provider.client";
 import { dataProvider } from "../providers/data-provider";
-import { Authenticated } from "@refinedev/core";
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <Authenticated key="admin-auth" fallback={null}>
-      {children}
-    </Authenticated>
-  );
-}
-
 import { useNotificationProvider } from "@refinedev/antd";
 import { Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
@@ -21,24 +11,23 @@ import { cookies } from "next/headers";
 import React, { Suspense } from "react";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@refinedev/antd/dist/reset.css";
-
 import "@ant-design/v5-patch-for-react-19";
 
 export const metadata: Metadata = {
-  title: "My Digital Hub",
+  title: "Ray's Lab",
   description: "个人数字产品矩阵管理后台",
   icons: {
     icon: "/favicon.ico",
   },
 };
 
-// 【关键修复 1】：将函数改为 async 异步函数
+// 核心修复：整个文件只保留这一个默认导出 (RootLayout)
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 【关键修复 2】：在 cookies() 前面加上 await (Next.js 15 新要求)
+  // 符合 Next.js 15 的异步要求
   const cookieStore = await cookies();
   const theme = cookieStore.get("theme");
   const defaultMode = theme?.value === "dark" ? "dark" : "light";
@@ -46,19 +35,19 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
+        {/* 埋点脚本：用于追踪到底是谁下达了跳转回首页的指令 */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             var oldPushState = history.pushState;
             history.pushState = function(state, title, url) {
                 if (url === "/" || url === "https://www.rayslifelab.com/") {
                     console.error("拦截到非法回跳首页！堆栈信息：", new Error().stack);
-                   // alert("抓到你了！看控制台堆栈。"); 
-                   // return; // 如果你想强制阻止它跳走，可以取消注释这一行
                 }
                 return oldPushState.apply(history, arguments);
             };
           })();
         ` }} />
+        
         <Suspense>
           <RefineKbarProvider>
             <AntdRegistry>
