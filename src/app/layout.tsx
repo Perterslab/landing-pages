@@ -1,21 +1,17 @@
+"use client";
 import { DevtoolsProvider } from "@providers/devtools";
 import { Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { Metadata } from "next";
 import React, { Suspense } from "react";
+// 下面这两个引用现在已经有实体文件支持了
 import { dataProvider } from "@utils/supabase/dataProvider";
 import { authProvider } from "@utils/supabase/authProvider";
-
-export const metadata: Metadata = {
-  title: "Ray's Lab - Admin",
-  description: "Digital Asset Management System",
-};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh">
       <body style={{ margin: 0 }}>
-        <Suspense>
+        <Suspense fallback={<div style={{ padding: "20px", color: "#fff", background: "#0f172a" }}>系统加载中...</div>}>
           <RefineKbarProvider>
             <DevtoolsProvider>
               <Refine
