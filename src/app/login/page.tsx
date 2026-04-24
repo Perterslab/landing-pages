@@ -7,7 +7,9 @@ import { useLogin } from "@refinedev/core";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { mutate: login, isLoading } = useLogin();
+  
+  // 【核心修复】：将 isLoading 替换为新版本支持的 isPending
+  const { mutate: login, isPending } = useLogin();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,7 +17,6 @@ export default function LoginPage() {
       alert("请输入邮箱和密码！");
       return;
     }
-    // 调用核心登录钩子，直连我们在 authProvider 里写的逻辑
     login({ email, password });
   };
 
@@ -55,16 +56,16 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isPending}
             style={{ 
               width: "100%", padding: "16px", marginTop: "15px", 
-              backgroundColor: isLoading ? "#475569" : "#3b82f6", 
+              backgroundColor: isPending ? "#475569" : "#3b82f6", 
               color: "#fff", border: "none", borderRadius: "8px", 
-              cursor: isLoading ? "not-allowed" : "pointer", 
+              cursor: isPending ? "not-allowed" : "pointer", 
               fontWeight: "bold", fontSize: "1.1rem", transition: "0.2s" 
             }}
           >
-            {isLoading ? "正在验证密钥..." : "安全登录"}
+            {isPending ? "正在验证密钥..." : "安全登录"}
           </button>
         </form>
 
