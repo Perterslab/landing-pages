@@ -9,91 +9,50 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isPending, setIsPending] = useState(false);
 
-  // 1. 防卡死机制：如果已经登录过，直接放行去后台
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabaseBrowserClient.auth.getSession();
-      if (session) {
-        window.location.href = "/admin/products";
-      }
-    };
-    checkAuth();
+    // 诊断：检查 Supabase 配置是否丢失
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!url) {
+      console.error("🚨 警告：环境变量 NEXT_PUBLIC_SUPABASE_URL 缺失！");
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      alert("⚠️ 请输入管理员邮箱和密码！");
-      return;
-    }
-    
     setIsPending(true);
 
-    // 2. 直连底层数据库验证，不经过任何第三方框架拦截
-    const { error } = await supabaseBrowserClient.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabaseBrowserClient.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      // 如果密码错误，明明白白地弹窗告诉你
-      alert("🚨 登录失败: " + error.message);
+      if (error) {
+        alert("❌ 登录失败详情: " + error.message);
+      } else if (data.session) {
+        alert("✅ 验证成功，正在跳转...");
+        window.location.href = "/admin/products";
+      } else {
+        alert("🤔 验证完成，但没有拿到 Session，请检查数据库设置。");
+      }
+    } catch (err: any) {
+      alert("💥 系统崩溃报错: " + err.message);
+    } finally {
       setIsPending(false);
-    } else {
-      // 3. 强制页面重载跳转，彻底刷新 React 状态树，确保权限生效
-      window.location.href = "/admin/products";
     }
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", fontFamily: "sans-serif" }}>
-      <div style={{ width: "100%", maxWidth: "420px", padding: "40px", backgroundColor: "#1e293b", borderRadius: "16px", border: "1px solid #334155", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
-        
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <h1 style={{ fontSize: "2.2rem", margin: "0 0 10px 0", color: "#fff", fontWeight: "900" }}>Ray&apos;s Lab</h1>
-          <div style={{ display: "inline-block", padding: "4px 12px", backgroundColor: "rgba(59, 130, 246, 0.1)", color: "#3b82f6", borderRadius: "20px", fontSize: "0.85rem", fontWeight: "bold" }}>
-            中控实验室安全入口
-          </div>
-        </div>
-
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc" }}>
+      <div style={{ width: "100%", maxWidth: "420px", padding: "40px", backgroundColor: "#1e293b", borderRadius: "16px", border: "1px solid #334155" }}>
+        <h1 style={{ textAlign: "center", marginBottom: "30px" }}>Ray&apos;s Lab Login</h1>
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#94a3b8", fontSize: "0.95rem", fontWeight: "bold" }}>管理员邮箱</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ width: "100%", padding: "14px", borderRadius: "8px", border: "1px solid #475569", backgroundColor: "#0f172a", color: "#fff", outline: "none", boxSizing: "border-box", fontSize: "1rem" }}
-              placeholder="admin@rayslifelab.com"
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#94a3b8", fontSize: "0.95rem", fontWeight: "bold" }}>访问密码</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "14px", borderRadius: "8px", border: "1px solid #475569", backgroundColor: "#0f172a", color: "#fff", outline: "none", boxSizing: "border-box", fontSize: "1rem" }}
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isPending}
-            style={{ 
-              width: "100%", padding: "16px", marginTop: "15px", 
-              backgroundColor: isPending ? "#475569" : "#3b82f6", 
-              color: "#fff", border: "none", borderRadius: "8px", 
-              cursor: isPending ? "not-allowed" : "pointer", 
-              fontWeight: "bold", fontSize: "1.1rem", transition: "0.2s" 
-            }}
-          >
-            {isPending ? "正在验证身份..." : "安全登录"}
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" style={{ padding: "14px", borderRadius: "8px", border: "1px solid #475569", backgroundColor: "#0f172a", color: "#fff" }} />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" style={{ padding: "14px", borderRadius: "8px", border: "1px solid #475569", backgroundColor: "#0f172a", color: "#fff" }} />
+          <button type="submit" disabled={isPending} style={{ padding: "16px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+            {isPending ? "Connecting..." : "Secure Login"}
           </button>
         </form>
-
       </div>
     </div>
   );
