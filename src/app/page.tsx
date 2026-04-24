@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export default function HomePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [localArticles, setLocalArticles] = useState<any[]>([]);
-  const [hashnodePosts, setHashnodePosts] = useState<any[]>([]); // 新增：Hashnode 数据状态
+  const [hashnodePosts, setHashnodePosts] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -22,7 +22,7 @@ export default function HomePage() {
       const { data: artData } = await supabase.from("articles").select("*").eq("is_published", true).order("created_at", { ascending: false });
       if (artData) setLocalArticles(artData);
 
-      // 2. 重新加回：获取远程 Hashnode 博客数据
+      // 2. 获取远程 Hashnode 博客数据
       try {
         const res = await fetch('https://gql.hashnode.com/', {
           method: 'POST',
@@ -102,4 +102,18 @@ export default function HomePage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "20px" }}>
               {hashnodePosts.map((post: any, i: number) => (
                 <a href={post.node.url} key={i} target="_blank" rel="noopener noreferrer" style={{ background: "rgba(30, 41, 59, 0.4)", padding: "24px", borderRadius: "12px", textDecoration: "none", color: "inherit", border: "1px dashed #334155", display: "block" }}>
-                  <h4 style={{ color: "#fff", marginBottom: "12px", fontSize: "
+                  <h4 style={{ color: "#fff", marginBottom: "12px", fontSize: "1.1rem" }}>{post.node.title}</h4>
+                  <p style={{ color: "#94a3b8", fontSize: "0.95rem", lineHeight: "1.6" }}>{post.node.brief}</p>
+                  <div style={{ marginTop: "20px", color: "#64748b", fontSize: "0.85rem", display: "flex", justifyContent: "space-between", borderTop: "1px dashed #334155", paddingTop: "15px" }}>
+                    <span>via Hashnode</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+      </div>
+    </main>
+  );
+}
