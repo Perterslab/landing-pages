@@ -35,6 +35,7 @@ export const authProviderClient: AuthProvider = {
       },
     };
   },
+  
   logout: async () => {
     // @ts-ignore
     const { error } = await supabaseBrowserClient.auth.signOut();
@@ -51,6 +52,7 @@ export const authProviderClient: AuthProvider = {
       redirectTo: "/login",
     };
   },
+  
   register: async ({ email, password }) => {
     try {
       // @ts-ignore
@@ -87,22 +89,24 @@ export const authProviderClient: AuthProvider = {
       },
     };
   },
+  
   check: async () => {
-  const { data } = await supabaseBrowserClient.auth.getSession();
-  const { session } = data;
+    const { data } = await supabaseBrowserClient.auth.getSession();
+    const { session } = data;
 
-  if (!session) {
+    if (!session) {
+      return {
+        authenticated: false,
+        redirectTo: "/login",
+        // 核心修复：这里绝对不返回 error 对象，防止触发全局错误导致乱跳
+      };
+    }
+
     return {
-      authenticated: false,
-      redirectTo: "/login",
-      // ⚠️ 核心修复：绝对不要在这里返回 error，让他安安静静地待在 login 页
+      authenticated: true,
     };
-  }
-
-  return {
-    authenticated: true,
-  };
-},
+  },
+  
   getPermissions: async () => {
     // @ts-ignore
     const user = await supabaseBrowserClient.auth.getUser();
@@ -111,6 +115,7 @@ export const authProviderClient: AuthProvider = {
     }
     return null;
   },
+  
   getIdentity: async () => {
     // @ts-ignore
     const { data } = await supabaseBrowserClient.auth.getUser();
@@ -122,15 +127,13 @@ export const authProviderClient: AuthProvider = {
     }
     return null;
   },
+  
   onError: async (error) => {
-  console.error("Auth Error:", error);
-  // 如果遇到 401 未授权，或者是别的严重错误，统一导向登录页，绝不去首页
-  if (error?.status === 401 || error?.name === "AuthApiError") {
+    console.error("Auth Error 拦截:", error);
+    // 强制规定：遇到任何认证相关的异常，只允许停留在 /login，绝对禁止 Refine 默认退回 /
     return {
       logout: true,
       redirectTo: "/login", 
     };
-  }
-  return { error };
-},
+  },
 };
