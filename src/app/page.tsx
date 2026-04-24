@@ -76,8 +76,8 @@ export default async function HomePage() {
         <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "1px" }}>
           <span style={{ color: "#3b82f6" }}>Ray&apos;s</span> Lab
         </div>
-        <Link href="/login" style={{ color: "#94a3b8", textDecoration: "none", fontSize: "0.95rem", fontWeight: "600" }}>
-          中控台 &rarr;
+        <Link href="/admin/products" style={{ color: "#94a3b8", textDecoration: "none", fontSize: "0.95rem", fontWeight: "600" }}>
+          进入中控台 &rarr;
         </Link>
       </nav>
 
