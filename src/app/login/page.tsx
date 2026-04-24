@@ -1,23 +1,48 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import React, { useState } from "react";
-import { useLogin } from "@refinedev/core";
+import React, { useState, useEffect } from "react";
+import { supabaseBrowserClient } from "@utils/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
-  // 【核心修复】：将 isLoading 替换为新版本支持的 isPending
-  const { mutate: login, isPending } = useLogin();
+  const [isPending, setIsPending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // 1. 防卡死机制：如果已经登录过，直接放行去后台
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabaseBrowserClient.auth.getSession();
+      if (session) {
+        window.location.href = "/admin/products";
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      alert("请输入邮箱和密码！");
+      alert("⚠️ 请输入管理员邮箱和密码！");
       return;
     }
-    login({ email, password });
+    
+    setIsPending(true);
+
+    // 2. 直连底层数据库验证，不经过任何第三方框架拦截
+    const { error } = await supabaseBrowserClient.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      // 如果密码错误，明明白白地弹窗告诉你
+      alert("🚨 登录失败: " + error.message);
+      setIsPending(false);
+    } else {
+      // 3. 强制页面重载跳转，彻底刷新 React 状态树，确保权限生效
+      window.location.href = "/admin/products";
+    }
   };
 
   return (
@@ -65,7 +90,7 @@ export default function LoginPage() {
               fontWeight: "bold", fontSize: "1.1rem", transition: "0.2s" 
             }}
           >
-            {isPending ? "正在验证密钥..." : "安全登录"}
+            {isPending ? "正在验证身份..." : "安全登录"}
           </button>
         </form>
 
