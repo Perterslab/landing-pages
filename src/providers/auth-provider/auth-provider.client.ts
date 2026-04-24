@@ -88,22 +88,25 @@ export const authProviderClient: AuthProvider = {
     };
   },
   check: async () => {
-    // @ts-ignore
-    const { data, error } = await supabaseBrowserClient.auth.getUser();
-    const { user } = data;
+      const { data } = await supabaseBrowserClient.auth.getSession();
+      const { session } = data;
 
-    if (error || !user) {
+      if (!session) {
+        return {
+          authenticated: false,
+          error: {
+            message: "请先登录",
+            name: "Unauthorized",
+          },
+          // 【关键修复】：明确告诉 Refine，没登录时去 /login，而不是默认的 /
+          redirectTo: "/login", 
+        };
+      }
+
       return {
-        authenticated: false,
-        redirectTo: "/login",
-        logout: true,
+        authenticated: true,
       };
-    }
-
-    return {
-      authenticated: true,
-    };
-  },
+    },
   getPermissions: async () => {
     // @ts-ignore
     const user = await supabaseBrowserClient.auth.getUser();

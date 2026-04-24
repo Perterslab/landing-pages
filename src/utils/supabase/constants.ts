@@ -1,3 +1,2 @@
-export const SUPABASE_URL = "https://jdnuikgtxooetvoyyyvw.supabase.co";
-export const SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkbnVpa2d0eG9vZXR2b3l5eXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MTUzNDQsImV4cCI6MjA5MjQ5MTM0NH0.QcBdJ4IVSaQQJn1y7s8RSRiR0yqcdtfFp2F1IZSNE2E";
+export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+export const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

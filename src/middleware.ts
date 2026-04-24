@@ -6,6 +6,7 @@ export async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   })
 
+  // 1. 创建 Supabase 服务器客户端
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -26,17 +27,27 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // 2. 获取当前用户
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 【核心逻辑】：如果用户访问的是以 /admin 开头的路径，且没有登录用户
-  if (request.nextUrl.pathname.startsWith('/admin') && !user) {
-    // 强制重定向到登录页
+  const is_admin_path = request.nextUrl.pathname.startsWith('/admin')
+  const is_login_path = request.nextUrl.pathname === '/login'
+
+  // 3. 【核心拦截逻辑】
+  // 如果是后台路径且没登录 -> 踢到登录页
+  if (is_admin_path && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // 如果已经登录还想去登录页 -> 踢到后台
+  if (is_login_path && user) {
+    return NextResponse.redirect(new URL('/admin/products', request.url))
   }
 
   return response
 }
 
+// 确保拦截所有后台路径
 export const config = {
-  matcher: ['/admin/:path*'], // 仅对 admin 路径及其子路径生效
+  matcher: ['/admin/:path*', '/login'],
 }
