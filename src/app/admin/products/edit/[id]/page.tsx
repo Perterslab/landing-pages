@@ -1,128 +1,170 @@
 "use client";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabaseBrowserClient } from "@utils/supabase/client";
 
-import { Edit, useForm } from "@refinedev/antd";
-import { Form, Input, Select, Switch, Card, Button, Space, Typography, Divider, Spin } from "antd";
-import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
+// 兼容 Next.js 15，params 必须声明为 Promise
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
+  const [id, setId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
-const { Title, Text } = Typography;
-const { TextArea } = Input;
-
-export default function ProductEdit() {
-  const { formProps, saveButtonProps, query } = useForm({
-    // 启用自动重定向，编辑成功后跳回列表
-    action: "edit",
+  const [formData, setFormData] = useState({ 
+    name: "", slug: "", summary: "", description: "", 
+    youtube_url: "", cover_image: "", download_url: "", 
+    is_published: false, is_featured: false 
   });
 
-  const productData = query?.data?.data;
-  const loading = query?.isLoading;
+  // 1. 初始化时读取数据库中的原有数据
+  useEffect(() => {
+    const loadData = async () => {
+      const resolvedParams = await params;
+      setId(resolvedParams.id);
 
-  // 监听产品类型变化
-  const productType = Form.useWatch("product_type", formProps.form);
+      const { data, error } = await supabaseBrowserClient
+        .from("products")
+        .select("*")
+        .eq("id", resolvedParams.id)
+        .single();
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: "50px" }}>
-        <Spin size="large" tip="正在加载资产数据..." />
-      </div>
-    );
+      if (data) {
+        setFormData({
+          name: data.name || "",
+          slug: data.slug || "",
+          summary: data.summary || "",
+          description: data.description || "",
+          youtube_url: data.youtube_url || "",
+          cover_image: data.cover_image || "",
+          download_url: data.download_url || "",
+          is_published: data.is_published || false,
+          is_featured: data.is_featured || false
+        });
+      } else if (error) {
+        alert("加载数据失败：" + error.message);
+      }
+      setFetching(false);
+    };
+    loadData();
+  }, [params]);
+
+  // 2. 独立图片上传逻辑 (和创建页保持一致)
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingImg(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `covers/${fileName}`;
+
+    const { error: uploadError } = await supabaseBrowserClient.storage
+      .from('images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      alert("上传图片失败：" + uploadError.message);
+    } else {
+      const { data } = supabaseBrowserClient.storage.from('images').getPublicUrl(filePath);
+      setFormData({ ...formData, cover_image: data.publicUrl });
+    }
+    setUploadingImg(false);
+  };
+
+  // 3. 提交更新到数据库
+  const handleSave = async () => {
+    if (!id) return;
+    setLoading(true);
+    const { data: { session } } = await supabaseBrowserClient.auth.getSession();
+    if (!session) {
+      alert("🚨 令牌丢失，请刷新或重新登录！");
+      setLoading(false); return;
+    }
+    
+    // 这里使用 update 而不是 insert，并指定被修改的 id
+    const { error } = await supabaseBrowserClient
+      .from("products")
+      .update(formData)
+      .eq("id", id);
+      
+    if (!error) { 
+      router.push("/admin/products"); 
+    } else { 
+      alert("更新失败：" + error.message); 
+    }
+    setLoading(false);
+  };
+
+  const FormGroup = ({ label, children }: { label: string, children: React.ReactNode }) => (
+    <div style={{ marginBottom: "24px" }}>
+      <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#94a3b8", fontSize: "0.95rem" }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+
+  const inputStyle = { width: "100%", padding: "14px", backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "8px", color: "white", outline: "none" };
+
+  if (fetching) {
+    return <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", padding: "50px", fontSize: "1.2rem" }}>⏳ 正在努力加载资产数据...</div>;
   }
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title={<Title level={3}>🛠️ 编辑数字资产：{productData?.name}</Title>}>
-      <Form
-        {...formProps}
-        layout="vertical"
-        initialValues={{
-          ...productData,
-          // 确保内容字段即使在数据库为 null 时也有初始值
-          content: productData?.content || { features: [] },
-        }}
-      >
-        <Card title="基础信息" bordered={false} style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: "16px" }}>
-            <Form.Item
-              label="产品名称"
-              name="name"
-              rules={[{ required: true, message: "请输入产品名称" }]}
-              style={{ flex: 1 }}
-            >
-              <Input size="large" />
-            </Form.Item>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc" }}>
+      <aside style={{ width: "300px", borderRight: "1px solid #1e293b", padding: "40px 24px", position: "fixed", height: "100vh" }}>
+        <h2 style={{ color: "#3b82f6", marginBottom: "30px" }}>编辑资产</h2>
+        <div style={{ background: "#1e293b", padding: "20px", borderRadius: "12px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px", cursor: "pointer" }}>
+            <input type="checkbox" checked={formData.is_published} onChange={e => setFormData({...formData, is_published: e.target.checked})} style={{ width: "18px", height: "18px" }}/>
+            立刻发布至首页
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+            <input type="checkbox" checked={formData.is_featured} onChange={e => setFormData({...formData, is_featured: e.target.checked})} style={{ width: "18px", height: "18px" }}/>
+            设为旗舰推荐 (置顶大图)
+          </label>
+        </div>
+        <button onClick={handleSave} disabled={loading || uploadingImg} style={{ width: "100%", marginTop: "30px", padding: "16px", background: "#10b981", border: "none", borderRadius: "8px", color: "#fff", cursor: "pointer", fontWeight: "bold", fontSize: "1.1rem", opacity: (loading || uploadingImg) ? 0.7 : 1 }}>
+          {loading ? "保存中..." : "确认修改"}
+        </button>
+      </aside>
 
-            <Form.Item
-              label="URL 访问路径 (Slug)"
-              name="slug"
-              rules={[{ required: true, message: "Slug 不能为空" }]}
-              style={{ flex: 1 }}
-              extra="修改 Slug 会导致旧的落地页链接失效，请谨慎操作。"
-            >
-              <Input size="large" />
-            </Form.Item>
-          </div>
-
-          <Form.Item label="一句话简介" name="summary">
-            <Input />
-          </Form.Item>
-        </Card>
-
-        <Card title="展示与状态" bordered={false} style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: "32px", alignItems: "center" }}>
-            <Form.Item label="落地页展示类型" name="product_type" style={{ flex: 1, marginBottom: 0 }}>
-              <Select size="large">
-                <Select.Option value="standard">📄 标准型</Select.Option>
-                <Select.Option value="project">🧱 项目型</Select.Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item label="发布状态" name="is_published" valuePropName="checked" style={{ marginBottom: 0 }}>
-              <Switch checkedChildren="已发布" unCheckedChildren="草稿" />
-            </Form.Item>
-          </div>
-        </Card>
-
-        {/* 条件渲染内容区 */}
-        {productType === "standard" ? (
-          <Card title="标准型内容" bordered={false} style={{ marginBottom: 16 }}>
-            <Form.Item label="下载链接" name="download_url">
-              <Input size="large" />
-            </Form.Item>
-            <Form.Item label="详细描述" name="description">
-              <TextArea rows={10} />
-            </Form.Item>
-          </Card>
-        ) : (
-          <Card title="🧱 积木模块配置" bordered={false} style={{ marginBottom: 16 }}>
-            <Form.List name={["content", "features"]}>
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <Space key={key} style={{ display: "flex", marginBottom: 16 }} align="baseline">
-                      <Form.Item
-                        {...restField}
-                        name={[name, "title"]}
-                        rules={[{ required: true, message: "缺少标题" }]}
-                      >
-                        <Input placeholder="模块标题" />
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, "description"]}
-                        rules={[{ required: true, message: "缺少描述" }]}
-                      >
-                        <TextArea placeholder="详细内容描述..." autoSize={{ minRows: 1 }} style={{ width: "400px" }} />
-                      </Form.Item>
-                      <MinusCircleOutlined onClick={() => remove(name)} style={{ color: "red" }} />
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                    添加新特性模块
-                  </Button>
-                </>
-              )}
-            </Form.List>
-          </Card>
-        )}
-      </Form>
-    </Edit>
+      <main style={{ marginLeft: "300px", flex: 1, padding: "60px" }}>
+        <div style={{ maxWidth: "800px", background: "#1e293b", padding: "40px", borderRadius: "16px", border: "1px solid #334155" }}>
+          <h3 style={{ borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", color: "#e2e8f0" }}>1. 基础信息</h3>
+          <FormGroup label="产品名称 (必填)">
+            <input placeholder="例如：LexGuard AI 智能合规系统" style={inputStyle} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+          </FormGroup>
+          <FormGroup label="访问路径 / Slug (必填，只能用英文和中划线)">
+            <input placeholder="例如：lexguard-ai" style={inputStyle} value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} />
+          </FormGroup>
+          <FormGroup label="一句话简介 (展示在首页卡片上)">
+            <input placeholder="简要描述这个工具的核心价值..." style={inputStyle} value={formData.summary} onChange={e => setFormData({...formData, summary: e.target.value})} />
+          </FormGroup>
+          
+          <h3 style={{ borderBottom: "1px solid #334155", paddingBottom: "15px", margin: "40px 0 25px", color: "#e2e8f0" }}>2. 媒体与资源</h3>
+          <FormGroup label="产品封面图 (支持直传或填入外部链接)">
+            <div style={{ display: "flex", gap: "15px", marginBottom: "10px" }}>
+              <input type="file" accept="image/*" onChange={handleImageUpload} style={{ padding: "10px", background: "#0f172a", border: "1px dashed #475569", borderRadius: "8px", color: "#94a3b8", width: "50%" }} />
+              {uploadingImg && <span style={{ color: "#3b82f6", alignSelf: "center" }}>正在上传至 Supabase...</span>}
+            </div>
+            <input placeholder="或者直接粘贴网络图片链接..." style={inputStyle} value={formData.cover_image} onChange={e => setFormData({...formData, cover_image: e.target.value})} />
+            {formData.cover_image && <img src={formData.cover_image} alt="预览" style={{ marginTop: "15px", height: "120px", borderRadius: "8px", border: "1px solid #334155" }}/>}
+          </FormGroup>
+          <FormGroup label="YouTube 视频链接 (如果有，将在详情页播放)">
+            <input placeholder="例如：https://www.youtube.com/watch?v=..." style={inputStyle} value={formData.youtube_url} onChange={e => setFormData({...formData, youtube_url: e.target.value})} />
+          </FormGroup>
+          <FormGroup label="产品获取/下载链接 (目标跳转地址)">
+            <input placeholder="例如 Chrome 商店链接或外部网站..." style={inputStyle} value={formData.download_url} onChange={e => setFormData({...formData, download_url: e.target.value})} />
+          </FormGroup>
+          
+          <h3 style={{ borderBottom: "1px solid #334155", paddingBottom: "15px", margin: "40px 0 25px", color: "#e2e8f0" }}>3. 深度文案</h3>
+          <FormGroup label="详细说明 (支持换行，展示在详情页)">
+            <textarea placeholder="在这里输入产品的详细功能、更新日志或使用说明..." style={{ ...inputStyle, height: "250px", resize: "vertical" }} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+          </FormGroup>
+        </div>
+      </main>
+    </div>
   );
 }
