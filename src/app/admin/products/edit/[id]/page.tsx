@@ -124,6 +124,6 @@ export default function ProductCreate() {
           </Card>
         )}
       </Form>
-    </Create>
+    </Edit>
   );
 }
