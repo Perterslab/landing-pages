@@ -8,13 +8,13 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 export default function ProductEdit() {
-  const { formProps, saveButtonProps, queryResult } = useForm({
+  const { formProps, saveButtonProps, query } = useForm({
     // 启用自动重定向，编辑成功后跳回列表
     action: "edit",
   });
 
-  const productData = queryResult?.data?.data;
-  const loading = queryResult?.isLoading;
+  const productData = query?.data?.data;
+  const loading = query?.isLoading;
 
   // 监听产品类型变化
   const productType = Form.useWatch("product_type", formProps.form);
