@@ -41,7 +41,7 @@ export default async function HomePage() {
       {/* 极简导航栏 */}
       <nav style={{ display: "flex", justifyContent: "space-between", padding: "24px 5%", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "1px" }}>
-          <span style={{ color: "#3b82f6" }}>Peter&apos;s</span> Lab
+          <span style={{ color: "#3b82f6" }}>Ray&apos;s</span> Lab
         </div>
         <Link href="/login" style={{ color: "#94a3b8", textDecoration: "none", fontSize: "0.95rem", fontWeight: "500", transition: "color 0.2s" }}>
           进入中控台 &rarr;
@@ -95,7 +95,7 @@ export default async function HomePage() {
 
       {/* 页脚 */}
       <footer style={{ textAlign: "center", padding: "60px 20px 40px", color: "#475569", marginTop: "80px", borderTop: "1px solid #1e293b" }}>
-        <p style={{ margin: 0 }}>© {new Date().getFullYear()} Peter&apos;s Lab. All rights reserved.</p>
+        <p style={{ margin: 0 }}>© {new Date().getFullYear()}Ray&apos;s Lab. All rights reserved.</p>
         <p style={{ fontSize: "0.85rem", marginTop: "8px" }}>Powered by Next.js & Supabase</p>
       </footer>
     </main>
