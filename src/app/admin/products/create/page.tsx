@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-// 【核心修复】：使用带有你登录状态记忆的客户端！
 import { supabaseBrowserClient } from "@utils/supabase/client";
 
 export default function CreateProductPage() {
@@ -21,10 +20,20 @@ export default function CreateProductPage() {
 
   const handleSave = async () => {
     setLoading(true);
-    // 现在提交数据时，会自动带上你的管理员 VIP 令牌
+
+    // 【核心安检】：在发货前，先摸一下口袋里有没有令牌
+    const { data: { session } } = await supabaseBrowserClient.auth.getSession();
+    if (!session) {
+      alert("🚨 令牌丢失：系统认为你当前未登录！\n解决办法：请刷新页面，或者点击左侧退出重新登录一次。");
+      setLoading(false);
+      return;
+    }
+
+    // 带着令牌去发数据
     const { error } = await supabaseBrowserClient.from("products").insert([formData]);
     
     if (!error) { 
+      // 成功后跳回产品列表
       router.push("/admin/products"); 
     } else { 
       alert("保存失败：" + error.message); 
