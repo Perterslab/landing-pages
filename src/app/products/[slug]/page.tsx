@@ -82,7 +82,7 @@ export default async function ProductLandingPage({ params }: { params: Promise<{
       
       {/* 原生 HTML 小写 footer，彻底解决大写 Footer 找不到的问题 */}
       <footer style={{ textAlign: "center", padding: "40px", color: "#94a3b8", marginTop: "40px", borderTop: "1px solid #e2e8f0" }}>
-        © {new Date().getFullYear()} Peter's Lab. All rights reserved.
+       © {new Date().getFullYear()} Ray&apos;s Lab. All rights reserved.
       </footer>
     </main>
   );
