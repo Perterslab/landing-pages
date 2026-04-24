@@ -16,7 +16,8 @@ export default function SettingsPage() {
   const [fetching, setFetching] = useState(true);
   const [settings, setSettings] = useState({
     site_title: "", site_subtitle: "", primary_color: "", contact_email: "",
-    logo_url: "", hashnode_host: "xuepilot.hashnode.dev", layout_mode: "classic"
+    logo_url: "", hashnode_host: "xuepilot.hashnode.dev", 
+    hashnode_title: "📝 AI Education Lab", layout_mode: "classic"
   });
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function SettingsPage() {
       <div style={{ background: "#1e293b", padding: "40px", borderRadius: "16px", border: "1px solid #334155" }}>
         
         <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px" }}>核心参数</h3>
-        <FormGroup label="网站主标题"><input style={inputStyle} value={settings.site_title} onChange={e => setSettings({...settings, site_title: e.target.value})} /></FormGroup>
+        <FormGroup label="网站主标题"><input style={inputStyle} value={settings.site_title || ""} onChange={e => setSettings({...settings, site_title: e.target.value})} /></FormGroup>
         
         <FormGroup label="Logo 图片" desc="上传后将直接替换左上角的品牌标识">
           <div style={{ display: "flex", gap: "15px", alignItems: "center", background: "#0f172a", padding: "15px", borderRadius: "8px", border: "1px dashed #334155" }}>
@@ -61,23 +62,30 @@ export default function SettingsPage() {
               <div style={{ color: "#64748b", fontStyle: "italic", fontSize: "0.9rem" }}>当前无 Logo</div>
             )}
             <div style={{ flex: 1 }}></div>
-            {/* 对接物理上传 */}
             <ImageUpload onUploadSuccess={(url) => setSettings({...settings, logo_url: url})} label="更换 Logo" />
           </div>
         </FormGroup>
         
         <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>前台展示规则</h3>
         <FormGroup label="首页排版模式">
-          <select style={selectStyle} value={settings.layout_mode} onChange={e => setSettings({...settings, layout_mode: e.target.value})}>
+          <select style={selectStyle} value={settings.layout_mode || "classic"} onChange={e => setSettings({...settings, layout_mode: e.target.value})}>
             <option value="classic">Classic 经典网格 (推荐)</option>
             <option value="minimal">Minimal 极简列表</option>
           </select>
         </FormGroup>
-        <FormGroup label="Hashnode 博客数据源" desc="你的 Hashnode 自定义域名或自带后缀域名"><input style={inputStyle} value={settings.hashnode_host} onChange={e => setSettings({...settings, hashnode_host: e.target.value})} /></FormGroup>
+        
+        <div style={{ background: "#0f172a", padding: "20px", borderRadius: "8px", border: "1px solid #334155", marginBottom: "24px" }}>
+          <FormGroup label="Hashnode 版块名称" desc="控制前台博客区域的大标题">
+            <input style={inputStyle} value={settings.hashnode_title || ""} onChange={e => setSettings({...settings, hashnode_title: e.target.value})} />
+          </FormGroup>
+          <FormGroup label="Hashnode 数据源" desc="你的 Hashnode 自定义域名或自带后缀域名">
+            <input style={inputStyle} value={settings.hashnode_host || ""} onChange={e => setSettings({...settings, hashnode_host: e.target.value})} />
+          </FormGroup>
+        </div>
 
         <h3 style={{ color: "#3b82f6", borderBottom: "1px solid #334155", paddingBottom: "15px", marginBottom: "25px", marginTop: "40px" }}>样式与联络</h3>
-        <FormGroup label="主题强调色"><input type="color" value={settings.primary_color} onChange={e => setSettings({...settings, primary_color: e.target.value})} style={{ width: "50px", height: "40px", cursor: "pointer", background: "transparent", border: "none" }} /></FormGroup>
-        <FormGroup label="官方联系邮箱"><input type="email" style={inputStyle} value={settings.contact_email} onChange={e => setSettings({...settings, contact_email: e.target.value})} /></FormGroup>
+        <FormGroup label="主题强调色"><input type="color" value={settings.primary_color || "#3b82f6"} onChange={e => setSettings({...settings, primary_color: e.target.value})} style={{ width: "50px", height: "40px", cursor: "pointer", background: "transparent", border: "none" }} /></FormGroup>
+        <FormGroup label="官方联系邮箱"><input type="email" style={inputStyle} value={settings.contact_email || ""} onChange={e => setSettings({...settings, contact_email: e.target.value})} /></FormGroup>
 
         <button onClick={handleSave} disabled={loading} style={{ width: "100%", padding: "16px", marginTop: "30px", backgroundColor: settings.primary_color || "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
           {loading ? "同步中..." : "保存全部设置"}

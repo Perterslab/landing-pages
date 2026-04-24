@@ -26,7 +26,7 @@ export default function HomePage() {
       const { data: artData } = await supabase.from("articles").select("*").eq("is_published", true).order("created_at", { ascending: false });
       if (artData) setLocalArticles(artData);
 
-      // 4. 根据后台设置的 host 获取 Hashnode
+      // 4. 获取 Hashnode
       if (setRes?.hashnode_host) {
         try {
           const res = await fetch('https://gql.hashnode.com/', {
@@ -37,7 +37,9 @@ export default function HomePage() {
             })
           });
           const json = await res.json();
-          if (json.data?.publication?.posts?.edges) setHashnodePosts(json.data.publication.posts.edges);
+          if (json.data?.publication?.posts?.edges) {
+            setHashnodePosts(json.data.publication.posts.edges);
+          }
         } catch (e) { console.error("Hashnode error", e); }
       }
     };
@@ -47,9 +49,11 @@ export default function HomePage() {
   if (!settings) return <div style={{ background: "#0f172a", minHeight: "100vh" }} />;
 
   const isMinimal = settings.layout_mode === 'minimal';
+  const displayTitle = settings.hashnode_title || "📝 AI Education Lab"; // 读取后台标题
 
   return (
     <main style={{ backgroundColor: "#0f172a", color: "#f8fafc", minHeight: "100vh", paddingBottom: "100px" }}>
+      
       {/* 动态导航栏 */}
       <nav style={{ display: "flex", justifyContent: "space-between", padding: "20px 5%", borderBottom: "1px solid #1e293b", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -97,6 +101,45 @@ export default function HomePage() {
             </div>
           </section>
         )}
+
+        {/* 重新回归的 Hashnode 版块 */}
+        {hashnodePosts.length > 0 && (
+          <section>
+            <h2 style={{ fontSize: "1.8rem", color: settings.primary_color || "#8b5cf6", marginBottom: "30px" }}>
+              {displayTitle}
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: isMinimal ? "1fr" : "repeat(auto-fill, minmax(340px, 1fr))", gap: "20px" }}>
+              {hashnodePosts.map((post: any, i: number) => (
+                <a 
+                  href={post.node.url} 
+                  key={i} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={{ 
+                    background: "rgba(30, 41, 59, 0.4)", padding: "24px", 
+                    borderRadius: "12px", textDecoration: "none", color: "inherit", 
+                    border: "1px dashed #334155", display: "block" 
+                  }}
+                >
+                  <h4 style={{ color: "#fff", marginBottom: "12px", fontSize: "1.1rem" }}>
+                    {post.node.title}
+                  </h4>
+                  <p style={{ color: "#94a3b8", fontSize: "0.95rem", lineHeight: "1.6" }}>
+                    {post.node.brief}
+                  </p>
+                  <div style={{ 
+                    marginTop: "20px", color: "#64748b", fontSize: "0.85rem", 
+                    display: "flex", justifyContent: "space-between", 
+                    borderTop: "1px dashed #334155", paddingTop: "15px" 
+                  }}>
+                    <span>via Hashnode</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
       </div>
     </main>
   );
