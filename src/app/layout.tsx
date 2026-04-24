@@ -1,101 +1,34 @@
-import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
+"use client";
+import { DevtoolsProvider } from "@providers/devtools";
+import { Refine } from "@refinedev/core";
+import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
+import React, { Suspense } from "react";
+import { dataProvider } from "@utils/supabase/dataProvider";
+import { authProvider } from "@utils/supabase/authProvider";
 
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
-
-// 抓取远程 Hashnode 博客
-async function getHashnodePosts() {
-  try {
-    const res = await fetch('https://gql.hashnode.com/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `query { publication(host: "xuepilot.hashnode.dev") { posts(first: 3) { edges { node { title, brief, url } } } } }`
-      }),
-      cache: 'no-store'
-    });
-    const json = await res.json();
-    return json.data?.publication?.posts?.edges || [];
-  } catch (e) { return []; }
-}
-
-function getYouTubeId(url: string) {
-  if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url?.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
-}
-
-export default async function HomePage() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  // 1. 读取产品资产
-  const { data: products } = await supabase.from("products").select("*").eq("is_published", true).order("created_at", { ascending: false });
-  
-  // 2. 读取本地数据库的文章 (新增部分)
-  const { data: localArticles } = await supabase.from("articles").select("*").eq("is_published", true).order("created_at", { ascending: false });
-
-  const hashnodePosts = await getHashnodePosts();
-
-  const featured = products?.find(p => p.is_featured);
-  const regular = products?.filter(p => p.id !== featured?.id) || [];
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main style={{ backgroundColor: "#0f172a", color: "#f8fafc", minHeight: "100vh", fontFamily: "sans-serif" }}>
-      <nav style={{ display: "flex", justifyContent: "space-between", padding: "20px 5%", borderBottom: "1px solid #1e293b" }}>
-        <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Ray&apos;s Lab</div>
-        <Link href="/admin/products" style={{ color: "#3b82f6", textDecoration: "none", fontWeight: "bold" }}>进入中控台 &rarr;</Link>
-      </nav>
-
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 20px" }}>
-        
-        {/* 产品资产区 */}
-        <section style={{ marginBottom: "60px" }}>
-          <h2 style={{ marginBottom: "30px", display: "flex", alignItems: "center", gap: "10px" }}>🛠️ 全部工具资产</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "25px" }}>
-            {products?.map(p => (
-              <Link href={`/products/${p.slug}`} key={p.id} style={{ textDecoration: "none", color: "inherit" }}>
-                <div style={{ background: "#1e293b", borderRadius: "12px", overflow: "hidden", border: "1px solid #334155" }}>
-                  <img src={p.cover_image} alt="封面" style={{ width: "100%", height: "160px", objectFit: "cover" }} />
-                  <div style={{ padding: "20px" }}>
-                    <h3 style={{ margin: "0 0 10px 0" }}>{p.name}</h3>
-                    <p style={{ color: "#94a3b8", fontSize: "0.9rem", margin: 0 }}>{p.summary}</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* 混合文章区：优先显示本地，其次显示 Hashnode */}
-        <section>
-          <h2 style={{ marginBottom: "30px" }}>📝 AI 教育实验室</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "20px" }}>
-            
-            {/* 1. 显示你自己在后台写的文章 */}
-            {localArticles?.map((art) => (
-              <div key={art.id} style={{ background: "#1e293b", padding: "24px", borderRadius: "12px", border: "2px solid #3b82f6", position: "relative" }}>
-                <span style={{ position: "absolute", top: "10px", right: "10px", fontSize: "0.7rem", backgroundColor: "#3b82f6", color: "white", padding: "2px 6px", borderRadius: "4px" }}>本地手记</span>
-                <h4 style={{ fontSize: "1.2rem", marginBottom: "12px" }}>{art.title}</h4>
-                <p style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: "1.6" }}>{art.summary}</p>
-                <div style={{ marginTop: "15px", color: "#64748b", fontSize: "0.8rem" }}>发布于 {new Date(art.created_at).toLocaleDateString()}</div>
-              </div>
-            ))}
-
-            {/* 2. 显示 Hashnode 文章 */}
-            {hashnodePosts.map((post: any, i: number) => (
-              <a href={post.node.url} key={i} target="_blank" style={{ background: "rgba(30, 41, 59, 0.5)", padding: "24px", borderRadius: "12px", textDecoration: "none", color: "inherit", border: "1px solid #334155" }}>
-                <h4 style={{ fontSize: "1.2rem", marginBottom: "12px" }}>{post.node.title}</h4>
-                <p style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: "1.6" }}>{post.node.brief}</p>
-                <div style={{ marginTop: "15px", color: "#64748b", fontSize: "0.8rem" }}>来自 Hashnode 博客</div>
-              </a>
-            ))}
-          </div>
-        </section>
-      </div>
-    </main>
+    <html lang="en">
+      <body style={{ margin: 0, backgroundColor: "#0f172a" }}>
+        <Suspense fallback={<div style={{ padding: "50px", color: "#fff", textAlign: "center" }}>System Loading...</div>}>
+          <RefineKbarProvider>
+            <DevtoolsProvider>
+              <Refine
+                dataProvider={dataProvider}
+                authProvider={authProvider}
+                resources={[
+                  { name: "products", list: "/admin/products", create: "/admin/products/create", edit: "/admin/products/edit/:id" },
+                  { name: "articles", list: "/admin/articles", create: "/admin/articles/create", edit: "/admin/articles/edit/:id" }
+                ]}
+                options={{ warnWhenUnsavedChanges: true }}
+              >
+                {children}
+                <RefineKbar />
+              </Refine>
+            </DevtoolsProvider>
+          </RefineKbarProvider>
+        </Suspense>
+      </body>
+    </html>
   );
 }
