@@ -1,129 +1,130 @@
 "use client";
 
-import { Edit, useForm } from "@refinedev/antd";
-import { Form, Input, Select, Button, Card, Space, Divider } from "antd";
-import { PlusOutlined, DeleteOutlined, UpOutlined, DownOutlined } from "@ant-design/icons";
+import { Create, useForm } from "@refinedev/antd";
+import { Form, Input, Select, Switch, Card, Button, Space, Typography, Divider } from "antd";
+import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
+
+const { Title, Text } = Typography;
+const { TextArea } = Input;
 
 export default function ProductCreate() {
-  // useForm 会自动接管保存到 Supabase 的所有逻辑
   const { formProps, saveButtonProps } = useForm({});
   
-  // 核心魔法 1：实时监听产品类型，决定下方渲染什么界面
+  // 监听产品类型，实现表单的动态变形
   const productType = Form.useWatch("product_type", formProps.form);
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title="发布新软件 / 插件">
-      <Form {...formProps} layout="vertical" initialValues={{ product_type: "standard" }}>
-        
-        {/* ================= 1. 基础通用字段 ================= */}
-        <div className="grid grid-cols-2 gap-4">
-          <Form.Item label="软件名称" name="name" rules={[{ required: true }]}>
-            <Input placeholder="例如：PriceWatch Asia" />
-          </Form.Item>
-          <Form.Item label="URL 访问路径 (Slug)" name="slug" rules={[{ required: true }]} tooltip="决定了前台的网址，必须是英文和连字符，不能重复">
-            <Input placeholder="例如：pricewatch-asia" />
-          </Form.Item>
-        </div>
-
-        <Form.Item label="一句话简介" name="tagline">
-          <Input placeholder="例如：东南亚电商竞品监控利器" />
-        </Form.Item>
-
-        {/* ================= 2. 类型切换中枢 ================= */}
-        <Form.Item label="落地页展示类型" name="product_type" rules={[{ required: true }]}>
-          <Select
-            options={[
-              { value: "standard", label: "🎯 标准型 (基础图文 + 简单下载)" },
-              { value: "complex", label: "🚀 项目型 (高级多模块 + 动态积木)" },
-            ]}
-          />
-        </Form.Item>
-
-        <Divider />
-
-        {/* ================= 3. 分支 A：标准型配置 ================= */}
-        {productType === "standard" && (
-          <div className="bg-white p-4 border rounded">
-            <Form.Item label="详细描述" name="description">
-              <Input.TextArea rows={4} placeholder="输入软件详细介绍..." />
+    <Create saveButtonProps={saveButtonProps} title={<Title level={3}>🚀 发布新数字资产</Title>}>
+      <Form 
+        {...formProps} 
+        layout="vertical"
+        initialValues={{
+          product_type: "standard",
+          is_published: false,
+          content: { features: [] } // 初始化 JSONB 结构
+        }}
+      >
+        <Card title="基础信息 (必填)" bordered={false} style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: "16px" }}>
+            <Form.Item
+              label="产品名称"
+              name="name"
+              rules={[{ required: true, message: "请输入产品名称" }]}
+              style={{ flex: 1 }}
+            >
+              <Input placeholder="例如：PriceWatch Asia" size="large" />
             </Form.Item>
-            <Form.Item label="下载链接" name="download_link">
-              <Input placeholder="https://chrome.google.com/webstore/..." />
+
+            <Form.Item
+              label="URL 访问路径 (Slug)"
+              name="slug"
+              rules={[{ required: true, message: "请输入唯一的路径" }]}
+              style={{ flex: 1 }}
+            >
+              <Input placeholder="例如：pricewatch-asia (建议纯小写英文加横杠)" size="large" />
             </Form.Item>
           </div>
+
+          <Form.Item label="一句话简介" name="summary">
+            <Input placeholder="用于列表页和 SEO 描述..." />
+          </Form.Item>
+        </Card>
+
+        <Card title="展示与状态控制" bordered={false} style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: "32px", alignItems: "center" }}>
+            <Form.Item 
+              label="落地页展示类型" 
+              name="product_type" 
+              style={{ flex: 1, marginBottom: 0 }}
+            >
+              <Select size="large">
+                <Select.Option value="standard">📄 标准型 (基础图文 + 简单下载)</Select.Option>
+                <Select.Option value="project">🧱 项目型 (启用高级动态积木模块)</Select.Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item 
+              label="是否立即发布上线？" 
+              name="is_published" 
+              valuePropName="checked"
+              style={{ marginBottom: 0 }}
+            >
+              <Switch checkedChildren="已发布" unCheckedChildren="草稿" />
+            </Form.Item>
+          </div>
+        </Card>
+
+        {/* 条件渲染：只有标准型才显示简单的下载链接和描述 */}
+        {productType === "standard" && (
+          <Card title="标准型内容" bordered={false} style={{ marginBottom: 16 }}>
+            <Form.Item label="下载链接或访问地址" name="download_url">
+              <Input placeholder="https://..." size="large" />
+            </Form.Item>
+            <Form.Item label="详细描述" name="description">
+              <TextArea rows={6} placeholder="输入软件详细介绍（支持普通文本或基础 HTML）..." />
+            </Form.Item>
+          </Card>
         )}
 
-        {/* ================= 4. 分支 B：项目型动态积木 ================= */}
-        {productType === "complex" && (
-          <Card title="🧩 页面积木配置" size="small" className="bg-gray-50 border-blue-200">
-            {/* Form.List 是处理 JSON 数组的神器 */}
-            <Form.List name="page_blocks">
-              {(fields, { add, remove, move }) => (
-                <div className="flex flex-col gap-4">
-                  {fields.map(({ key, name, ...restField }, index) => (
-                    <Card key={key} size="small" className="shadow-sm">
-                      {/* 模块头部与排序控制 */}
-                      <div className="flex justify-between items-center mb-4 pb-2 border-b">
-                        <span className="font-bold text-gray-600">排版模块 #{index + 1}</span>
-                        <Space>
-                          <Button size="small" icon={<UpOutlined />} onClick={() => move(index, index - 1)} disabled={index === 0} />
-                          <Button size="small" icon={<DownOutlined />} onClick={() => move(index, index + 1)} disabled={index === fields.length - 1} />
-                          <Button size="small" danger icon={<DeleteOutlined />} onClick={() => remove(name)} />
-                        </Space>
-                      </div>
-
-                      <Form.Item {...restField} name={[name, "type"]} label="选择本块的展现形式">
-                        <Select
-                          options={[
-                            { value: "hero", label: "大标题横幅 (Hero)" },
-                            { value: "feature_grid", label: "功能矩阵网络 (Feature Grid)" },
-                          ]}
-                        />
+        {/* 条件渲染：积木系统大显身手的地方 (数据存入 content 字段) */}
+        {productType === "project" && (
+          <Card title="🧱 动态积木配置 (Project 专属)" bordered={false} style={{ marginBottom: 16 }}>
+            <Text type="secondary">在这里添加的内容将以 JSON 格式存储，并在前台被渲染成精美的独立站模块。</Text>
+            <Divider />
+            
+            <Form.List name={["content", "features"]}>
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <Space key={key} style={{ display: 'flex', marginBottom: 16 }} align="baseline">
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'title']}
+                        rules={[{ required: true, message: '缺少模块标题' }]}
+                      >
+                        <Input placeholder="特性标题 (如: 极速响应)" />
                       </Form.Item>
-
-                      {/* 核心魔法 2：根据选择的模块类型，动态展现不同的输入框 */}
-                      <Form.Item noStyle shouldUpdate>
-                        {() => {
-                          const type = formProps.form?.getFieldValue(["page_blocks", name, "type"]);
-                          
-                          if (type === "hero") {
-                            return (
-                              <Form.Item {...restField} name={[name, "data", "title"]} label="输入大标题内容">
-                                <Input placeholder="例如：激发你的创作潜能" />
-                              </Form.Item>
-                            );
-                          }
-                          
-                          if (type === "feature_grid") {
-                            return (
-                              <Form.Item {...restField} name={[name, "data", "items"]} label="输入功能点 (输入文字后按回车键)">
-                                {/* tags 模式会自动把用户的输入变成 ["A", "B"] 的数组格式，直接适配 Supabase JSON */}
-                                <Select mode="tags" style={{ width: '100%' }} placeholder="例如输入: AI一键剪辑 (按回车)" />
-                              </Form.Item>
-                            );
-                          }
-                          return null;
-                        }}
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'description']}
+                        rules={[{ required: true, message: '缺少模块描述' }]}
+                      >
+                        <Input.TextArea placeholder="特性详细描述..." rows={1} style={{ width: '400px' }} />
                       </Form.Item>
-                    </Card>
+                      <MinusCircleOutlined onClick={() => remove(name)} style={{ color: 'red' }} />
+                    </Space>
                   ))}
-                  
-                  {/* 添加新模块的触发器 */}
-                  <Button 
-                    type="dashed" 
-                    onClick={() => add({ id: Date.now().toString(), type: 'hero', data: {} })} 
-                    block 
-                    icon={<PlusOutlined />}
-                    className="border-blue-300 text-blue-600"
-                  >
-                    添加新排版模块
-                  </Button>
-                </div>
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      新增特性区块 (Feature Block)
+                    </Button>
+                  </Form.Item>
+                </>
               )}
             </Form.List>
           </Card>
         )}
       </Form>
-    </Create>
+    </Edit>
   );
 }
