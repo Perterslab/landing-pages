@@ -1,13 +1,35 @@
-check: async () => {
-    const { data } = await supabaseBrowserClient.auth.getSession();
-    if (!data.session) {
-      return {
-        authenticated: false,
-        // 删掉 redirectTo: "/login"，因为 middleware 已经做了。
-        // 这里的关键是：不要返回任何会导致框架自动跳回 "/" 的东西
-      };
+"use client";
+
+import type { AuthProvider } from "@refinedev/core";
+import { supabaseBrowserClient } from "@utils/supabase/client";
+
+export const authProviderClient: AuthProvider = {
+  login: async ({ email, password }) => {
+    const { data, error } = await supabaseBrowserClient.auth.signInWithPassword({ email, password });
+    if (error) return { success: false, error };
+    if (data?.session) {
+      return { success: true, redirectTo: "/admin/products" };
     }
-    return {
-      authenticated: true,
-    };
+    return { success: false, error: { name: "LoginError", message: "Invalid credentials" } };
   },
+  logout: async () => {
+    await supabaseBrowserClient.auth.signOut();
+    localStorage.clear();
+    return { success: true, redirectTo: "/login" };
+  },
+  check: async () => {
+    const { data } = await supabaseBrowserClient.auth.getSession();
+    return { authenticated: !!data.session };
+  },
+  onError: async (error) => {
+    if (error?.status === 401) {
+      return { logout: true, redirectTo: "/login" };
+    }
+    return { error };
+  },
+  getPermissions: async () => null,
+  getIdentity: async () => {
+    const { data } = await supabaseBrowserClient.auth.getUser();
+    return data?.user ? { ...data.user, name: data.user.email } : null;
+  },
+};
